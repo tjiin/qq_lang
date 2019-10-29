@@ -4,7 +4,7 @@ from pprint import *
 from ast import data_dict
 
 """
-TODO: Implicit multiplication kind of works but '(1) (2)' would be incorrect parsed as multiplying...
+TODO: Implicit multiplication kind of works but '(1) (2)' would be incorrectly parsed as multiplying...
 """
 
 

@@ -1,21 +1,24 @@
 from rply import ParserGenerator
 from ast import *
+from pprint import *
+import warnings
+warnings.filterwarnings('ignore')
 
 pg = ParserGenerator(
     # A list of all token names, accepted by the parser.
     ['INTEGER', 'FLOAT', 'OPEN_PARENS', 'CLOSE_PARENS',
      'PLUS', 'NEGATIVE', 'MINUS', 'MUL', 'DIV', 'LET', 'IDENTIFIER', '=', 'ASSIGNMENT',
      'NEWLINE'],
+
     # A list of precedence rules with ascending precedence, to
     # disambiguate ambiguous production rules.
     precedence=[
         ('left', ['PLUS', 'MINUS']),
-        ('left', ['MUL', 'DIV']),               #   ('left', ['IMPLICIT_MUL_NUM_PAREN', 'IMPLICIT_MUL_']),
+        ('left', ['MUL', 'DIV']),
         ('left', ['FLOAT', 'INTEGER']),
         ('left', ['IDENTIFIER']),
     ]
 )
-
 
 
 
@@ -40,15 +43,18 @@ def expression_parens(p):
 def assign_expr(p):
     return Assignment(p[1], p[3])
 
+
 # EVEN PYTHON DOESN'T EVALUATE THIS ("int or float object is not callable")
 @pg.production('expression : number OPEN_PARENS expression CLOSE_PARENS', precedence='MUL')
 def implicit_mul_num_parens(p):
     return Mul( p[0], p[2] )
 
+
 # EVEN PYTHON DOESN'T EVALUATE THIS ("int or float object is not callable")
 @pg.production('expression : OPEN_PARENS expression CLOSE_PARENS number', precedence='MUL')
 def implicit_mul_parens_num_(p):
     return Mul( p[1], p[3] )
+
 
 # EVEN PYTHON DOESN'T EVALUATE THIS ("int or float object is not callable")
 @pg.production('expression : OPEN_PARENS expression CLOSE_PARENS OPEN_PARENS expression CLOSE_PARENS', precedence='MUL')
@@ -99,7 +105,6 @@ def error_handler(token):
     print('\n')
 
     raise ValueError("Ran into a %s where it wasn't expected" % token.gettokentype())
-
 
 
 parser = pg.build()

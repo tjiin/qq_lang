@@ -1,4 +1,5 @@
 from rply.token import BaseBox
+
 data_dict = {}
 
 
@@ -8,6 +9,7 @@ class Identifier(BaseBox):
 
     def eval(self):
         return self.name
+
 
 class Variable(BaseBox):
     def __init__(self,name):
@@ -59,6 +61,7 @@ class Integer(BaseBox):
 
     def get_str(self):
         print(str(self.value))
+
 
 class BinaryOp(BaseBox):
     def __init__(self, left, right):
