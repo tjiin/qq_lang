@@ -2,10 +2,20 @@ from rply.token import BaseBox
 data_dict = {}
 
 
+class Identifier(BaseBox):
+    def __init__(self,name):
+        self.name = str(name)
+
+    def eval(self):
+        return self.name
+
 class Variable(BaseBox):
-    def __init__(self,name,value=None):
-        self.name = name
-        self.value = value
+    def __init__(self,name):
+        self.name = name.value
+        if self.name in data_dict:
+            self.value = data_dict[self.name]
+        else:
+            self.value = None
 
     def eval(self):
         return self.value
@@ -16,15 +26,17 @@ class Variable(BaseBox):
 
 class Assignment(BaseBox):
     def __init__(self,name,expr):
-        self.name = name
-        self.expr = expr
+        self.name = name.value
         self.var = Variable(name)
-        #data_dict[name] = self.var
+        self.expr = expr
+        data_dict[self.name] = self.expr.eval()
+        self.var.update_value( self.expr.eval() )
 
     def eval(self):
         val = self.expr.eval()
-        self.var.value = val
-        return val
+        self.var.update_value(val)
+        data_dict[self.name] = val
+        #return val
 
 
 class Float(BaseBox):

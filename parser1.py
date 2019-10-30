@@ -5,36 +5,39 @@ pg = ParserGenerator(
     # A list of all token names, accepted by the parser.
     ['INTEGER', 'FLOAT', 'OPEN_PARENS', 'CLOSE_PARENS',
      'PLUS', 'NEGATIVE', 'MINUS', 'MUL', 'DIV', 'LET', 'IDENTIFIER', '=', 'ASSIGNMENT',
-     'NEWLINE' # 'IMPLICIT_MUL_NUM_PAREN', 'IMPLICIT_MUL_)('
-    ],
+     'NEWLINE'],
     # A list of precedence rules with ascending precedence, to
     # disambiguate ambiguous production rules.
     precedence=[
         ('left', ['PLUS', 'MINUS']),
-        ('left', ['MUL', 'DIV']), #   ('left', ['IMPLICIT_MUL_NUM_PAREN', 'IMPLICIT_MUL_']),
+        ('left', ['MUL', 'DIV']),               #   ('left', ['IMPLICIT_MUL_NUM_PAREN', 'IMPLICIT_MUL_']),
         ('left', ['FLOAT', 'INTEGER']),
         ('left', ['IDENTIFIER']),
-
     ]
 )
 
 
-"""@pg.production('block : expression NEWLINE expression')
-def block(p):
-    return(p[0], p[2])"""
+
+
+@pg.production('statement : expression')
+@pg.production('statement : assignment')
+def statement_expr(p):
+    return p[0]
 
 @pg.production('expression : number')
-@pg.production('expression : IDENTIFIER')
 def expression_number(p):
     return p[0]
+
+@pg.production('expression : IDENTIFIER')
+def expression_id(p):
+    return Variable(p[0])
 
 @pg.production('expression : OPEN_PARENS expression CLOSE_PARENS')
 def expression_parens(p):
     return p[1]
 
-@pg.production('expression : LET IDENTIFIER = expression')
+@pg.production('assignment : LET IDENTIFIER = expression')
 def assign_expr(p):
-    print('entered')
     return Assignment(p[1], p[3])
 
 # EVEN PYTHON DOESN'T EVALUATE THIS ("int or float object is not callable")
@@ -88,12 +91,15 @@ def expression_binop(p):
     else:
         raise AssertionError('Oops, this should not be possible!')
 
-
 @pg.error
 def error_handler(token):
+    print('\n--Parsing Error--')
     print(token.getsourcepos())
+    print(token)
+    print('\n')
 
     raise ValueError("Ran into a %s where it wasn't expected" % token.gettokentype())
+
 
 
 parser = pg.build()
