@@ -1,0 +1,14 @@
+
+- exponents
+- functions
+- different data types
+- different variable declarations
+- program structure, parsing, etc
+
+
+( 03:54:30 PM | Tue Oct 29 2019 )
+- take a break then try adding lines and other data types
+
+( 05:43:45 PM | Tue Oct 29 2019 )
+- added exponents which needed new rules/patterns and order of operations update
+- added more negative cases like -(-2), 1*-1 and ---(3)

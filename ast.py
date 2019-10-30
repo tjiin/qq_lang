@@ -87,3 +87,25 @@ class Mul(BinaryOp):
 class Div(BinaryOp):
     def eval(self):
         return self.left.eval() / self.right.eval()
+
+
+class Pow(BinaryOp):
+    def eval(self):
+        return pow( self.left.eval(), self.right.eval() ) 
+
+
+class UnaryOp(BaseBox):
+    def __init__(self, arg, op):
+        self.arg = arg
+        self.op = op
+
+
+class FlipSign(BaseBox):
+    def __init__(self,arg):
+        self.value = arg
+
+    def eval(self):
+       return self.value.eval()*(-1)
+
+
+
