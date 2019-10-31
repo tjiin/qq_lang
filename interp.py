@@ -1,11 +1,8 @@
 from lexer import lexer, dprint
 from parser33 import parser
 from ast import *
-from pprint import *
 import sys, os
 
-
-# interpreter will read statements from command line or a file
 
 def interpret(code):
 	return parser.parse(lexer.lex(code)).eval()
@@ -27,8 +24,8 @@ def main():
 				for t in lexer.lex(code): 
 					print(t)
 			print('\n')
-			print(f'data_dict = {data_dict}')	
-			print(f'line_count = {line_count}')
+		print(f'data_dict = {data_dict}')
+		print(f'line_count = {line_count}')
 
 
 if __name__ == '__main__':

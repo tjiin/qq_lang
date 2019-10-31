@@ -13,6 +13,8 @@
 TODO: Implicit multiplication kind of works but '(1) (2)' would be incorrectly parsed as multiplying...
 TODO: Handle assigning boolean expressions to variables
 
+IDEA: ('case1', '1+1', eval(self[-1])) ) => ('case1', '1+1', 2)
+--> assigning element while declaring in relation to other elements
 -----------------
 
 ( 03:54:30 PM | Tue Oct 29 2019 )
@@ -27,3 +29,23 @@ TODO: Handle assigning boolean expressions to variables
 - now fixing all suggestions
 - was close to getting variables working but then things started to break again
 - experimented with NO_EQUALS in parsing variable assignments for a while
+
+( 07:20:46 PM | Wed Oct 30 2019 )
+- all tests in main work, committed to new branch
+- variable assignments to complex expressions seem to work
+    - e.g. let num = 292.1*(0.24^(-1))
+- still have 5 shift/reduce warnings
+- starting work on multiple lines
+
+( 10:15:40 PM | Wed Oct 30 2019 )
+- got pretty heavy into debugging, learned a lot about tracing things through the stack
+- pycharm or a good IDE is absolutely necessary...
+- writing unit tests for the past while, wasting a bit of time trying to be too fancy
+
+( 11:25:34 PM | Wed Oct 30 2019 )
+- found a better and simpler unit test method after trying a few
+    - easy to parametrize and print all cases and results
+- most tests written for where interpreter is at
+- still some weird broken cases and things left hanging like ((2)(2)(2))
+- can't unittest variables at this point
+

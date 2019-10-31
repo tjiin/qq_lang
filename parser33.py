@@ -3,7 +3,7 @@ from ast import *
 from lexer import dprint
 from pprint import *
 import warnings
-# warnings.filterwarnings('ignore')
+warnings.filterwarnings('ignore')
 
 
 pg = ParserGenerator(
@@ -23,7 +23,8 @@ pg = ParserGenerator(
         ('right', ['POW']),
         ('left', ['LPAREN', 'RPAREN']),
         ('left', ['NEGATIVE']),
-    ]
+    ],
+    cache_id='pg_cache1'
 )
 
 """@pg.production('decor_const : START')
@@ -163,6 +164,7 @@ def error_handler(token):
 
 
 parser = pg.build()
+
 
 # print(parser)
 
