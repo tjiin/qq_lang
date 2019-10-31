@@ -49,3 +49,12 @@ IDEA: ('case1', '1+1', eval(self[-1])) ) => ('case1', '1+1', 2)
 - still some weird broken cases and things left hanging like ((2)(2)(2))
 - can't unittest variables at this point
 
+( 04:41:29 AM | Thu Oct 31 2019 )
+- starting work again, target is multiline
+
+( 06:51:10 AM | Thu Oct 31 2019 )
+- figured out a way to unittest variables at this stage
+    - pretty surprised that "let x = 19+(2*42/(-0.125))" worked
+    - but the name storage model atm is disturbing
+- spent the last hour+ reading about terminal vs nonterminal symbols, context-free grammars,
+  polish notation (and reverse), statements vs expressions and python's EBNF ...

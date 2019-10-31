@@ -1,7 +1,8 @@
 from lexer import lexer, dprint
 from parser33 import parser
-from ast import *
-import sys, os
+import ast
+import sys
+import os
 
 
 def interpret(code):
@@ -13,7 +14,7 @@ def main():
 	a = sys.argv[1]
 	if n > 1:
 		if os.path.exists(a): 
-			with open(a,'r') as f: code = f.read()
+			with open(a, 'r') as f: code = f.read()
 		else: 
 			code = sys.argv[1]
 		try:
@@ -24,8 +25,8 @@ def main():
 				for t in lexer.lex(code): 
 					print(t)
 			print('\n')
-		print(f'data_dict = {data_dict}')
-		print(f'line_count = {line_count}')
+		print(f'data_dict = {ast.data_dict}')
+		# print(f'line_count = {line_count}')
 
 
 if __name__ == '__main__':

@@ -3,7 +3,7 @@ from ast import *
 from lexer import dprint
 from pprint import *
 import warnings
-warnings.filterwarnings('ignore')
+# warnings.filterwarnings('ignore')
 
 
 pg = ParserGenerator(
@@ -27,10 +27,11 @@ pg = ParserGenerator(
     cache_id='pg_cache1'
 )
 
-"""@pg.production('decor_const : START')
-@pg.production('decor_const : END')
+
+# @pg.production('end : START')
+# @pg.production('decor_const : END')
 def decor_const(p):
-    return p[0]"""
+    return p[0]
 
 
 @pg.production('expr : number')
@@ -64,14 +65,6 @@ def eval_number(p):
         return Integer(-1 * int(p[1].getstr()))
     else:
         ValueError('This should not happen!')
-
-
-# @pg.production('assign : NO_EQUALS')
-"""@pg.production('expr : NO_EQUALS')
-def eval_no_equals(p):
-	print('eval no equals')
-	return p[0]
-"""
 
 
 @pg.production('assign : LET IDENTIFIER = expr')

@@ -24,6 +24,6 @@ lg.add('NEWLINE', r"\\n")
 lg.add('END', r"{End}")
 lg.add('START', r"{Start}")
 lg.add('NO_EQUALS', r'^([a-zA-Z0-9_\+\-\*\/\^\s\(\).,]+)')
-lg.ignore(r'\s')
+lg.ignore(r'[^\S\n\t]+')
 
 lexer = lg.build()
