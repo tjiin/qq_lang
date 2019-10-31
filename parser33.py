@@ -3,7 +3,7 @@ from ast import *
 from lexer import dprint
 from pprint import *
 import warnings
-# warnings.filterwarnings('ignore')
+warnings.filterwarnings('ignore')
 
 
 pg = ParserGenerator(
@@ -13,29 +13,50 @@ pg = ParserGenerator(
      'NEGATIVE', 'PLUS', 'MINUS', 'MUL', 'DIV', 'POW', 'CARET', 'MOD',
      'LET', 'IDENTIFIER', '=', '==', '!=', 'IF', 'AND', 'OR', 'NOT', 'ELSE', 'ELIF',
      'FUNCTION', '<', '>', '<=', '>=',
-     'START', 'END', 'NO_EQUALS'],
+     'START', 'END', 'NO_EQUALS', 'NEWLINE', '$end'],
     # List of precedence rules in ascending order
     precedence=[
-        ('right', ['IDENTIFIER']),
-        ('left', ['PLUS', 'MINUS']),
-        ('left', ['MUL', 'DIV']),
+        ('left', ['LET']),
+        ('left', ['=']),
         ('left', ['FLOAT', 'INTEGER']),
         ('right', ['POW']),
+        ('left', ['NEWLINE']),
         ('left', ['LPAREN', 'RPAREN']),
         ('left', ['NEGATIVE']),
+        ('left', ['PLUS', 'MINUS']),
+        ('left', ['MUL', 'DIV']),
     ],
     cache_id='pg_cache1'
 )
 
 
-# @pg.production('end : START')
-# @pg.production('decor_const : END')
-def decor_const(p):
+@pg.production('main : statement')
+def program(p):
     return p[0]
 
 
+@pg.production('statement : stmt NEWLINE')
+@pg.production('statement : stmt $end')
+@pg.production('statement : stmt NEWLINE stmt')
+def statement(p):
+    return p[0]
+
+
+@pg.production('stmt : expr')
+def stmt(p):
+    return p[0]
+
+
+@pg.production('stmt : LET IDENTIFIER = expr')
+def assign_id(p):
+    dprint(p)
+    if hasattr(p[3], 'left') and hasattr(p[3], 'left'):
+        dprint(p[3].left)
+        dprint(p[3].right)
+    return Assignment(p[1], p[3])
+
+
 @pg.production('expr : number')
-@pg.production('expr : assign')
 def eval_base(p):
     return p[0]
 
@@ -67,32 +88,9 @@ def eval_number(p):
         ValueError('This should not happen!')
 
 
-@pg.production('assign : LET IDENTIFIER = expr')
-def assign_id(p):
-    dprint(p)
-    if hasattr(p[3], 'left') and hasattr(p[3], 'left'):
-        dprint(p[3].left)
-        dprint(p[3].right)
-    return Assignment(p[1], p[3])
-
-
-"""@pg.production('update : IDENTIFIER = expr')
-def update_assign(p):
-    return Assignment(p[0], p[1])
-
-@pg.production('declare : LET IDENTIFIER')
-def declare_id(p):
-    return Variable(p[1])"""
-
-
 @pg.production('expr : NEGATIVE NEGATIVE expr')
 def double_negative(p):
     return p[2]
-
-
-# @pg.production('expr : FUNCTION')
-# @pg.production('expr : STRING')
-# @pg.production('expr : BOOL')
 
 
 @pg.production('expr : NEGATIVE LPAREN expr RPAREN')
@@ -109,8 +107,10 @@ def binop_num_expr(p):
     left = p[0]
     right = p[2]
     if p[1].gettokentype() == 'PLUS':
+        print('add sent to eval')
         return Add(left, right)
     elif p[1].gettokentype() == 'MINUS':
+        print('sub sent to eval')
         return Sub(left, right)
     elif p[1].gettokentype() == 'MUL':
         return Mul(left, right)

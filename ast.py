@@ -12,6 +12,11 @@ class Node(BaseBox):
     line_count = 0
 
 
+class NEWLINE():
+    global line_count
+    line_count += 1
+
+
 class NoEquals(Node):
     def __init__(self,token):
         self.name = token.name
@@ -130,14 +135,18 @@ class BinaryOp(Node):
 
 class Add(BinaryOp):
     def eval(self):
-        #print('adding')
+        print('ADD IN EVAL')
         #print( type(self.left.eval()), type(self.right.eval()) )
-        return self.left.eval() + self.right.eval()
+        print( self.left.eval() + self.right.eval() )
+        print(self.right.eval() )
+        return self.left.eval().add(self.right.eval())
 
 
 class Sub(BinaryOp):
     def eval(self):
-        return self.left.eval() - self.right.eval()
+        print('SUB IN EVAL')
+        print(self.left.eval() - self.right.eval())
+        return self.left.eval().sub(self.right.eval())
 
 
 class Mul(BinaryOp):

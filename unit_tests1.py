@@ -1,6 +1,7 @@
 from unittest import TestCase
 from interp import interpret
 from ast import data_dict
+from lexer import lexer
 
 two_arg_arithmetic = [
     ('add 2 pos', '1 + 1'), ('sub 2 pos', '8 - 4'), ('mul 2 pos', '4 * 8',), ('div 2 pos', '12 / 3'),
@@ -30,6 +31,14 @@ simple_var_assign = [
     ('var assign expr', 'let x = 19+(2*42/(-0.125))', 'x', -653),
 ]
 
+new_line_expr = [
+    ('two line expr', r'1+1 \n 10-2', [2, 8])
+]
+
+new_line_var = [
+    ('two line assign eval', r'let x = 10 \n x + 1', 'x', 11)
+]
+
 
 class TestInterpreter(TestCase):
     def test_arithmetic_two_args(self):
@@ -52,3 +61,21 @@ class TestInterpreter(TestCase):
             with self.subTest(msg=m, case=p1, expected=ans):
                 interpret(p1)
                 self.assertEqual(ans, data_dict[var])
+
+    def test_new_line_expr(self):
+        for m, p1, ans in new_line_expr:
+            with self.subTest(msg=m, case=p1, expected=ans):
+                for t in lexer.lex(p1):
+                    print(t)
+                print(interpret(p1))
+                #self.assertEqual(ans, interpret(p1))
+                self.assertEqual(0, 0)
+
+    def test_new_line_var(self):
+        for m, p1, var, ans in new_line_var:
+            with self.subTest(msg=m, case=p1, expected=ans):
+                for t in lexer.lex(p1):
+                    print(t)
+                print(interpret(p1))
+                print(data_dict[var])
+                self.assertEqual(ans, interpret(p1))
