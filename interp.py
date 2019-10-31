@@ -1,4 +1,4 @@
-from lexer import lexer
+from lexer import lexer, dprint
 from parser33 import parser
 from ast import *
 from pprint import *
@@ -12,7 +12,6 @@ def interpret(code):
 
 
 def main():
-
 	n = len(sys.argv)
 	a = sys.argv[1]
 	if n > 1:
@@ -20,7 +19,6 @@ def main():
 			with open(a,'r') as f: code = f.read()
 		else: 
 			code = sys.argv[1]
-		
 		try:
 			print(interpret(code))
 		except Exception as e:
@@ -28,7 +26,6 @@ def main():
 			if n == 3 and sys.argv[2] == 'a':
 				for t in lexer.lex(code): 
 					print(t)
-
 			print('\n')
 			print(f'data_dict = {data_dict}')	
 			print(f'line_count = {line_count}')

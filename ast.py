@@ -1,5 +1,5 @@
 from rply.token import BaseBox
-from parser33 import dprint
+from lexer import dprint
 
 global data_dict
 global line_count
@@ -53,7 +53,6 @@ class Identifier(Node):
 
     def eval(self):
         if self.name in data_dict:
-            dprint('name in dict')
             return data_dict[self.name]
         else:
             dprint(f'Identifier {self.name} is undefined')
@@ -61,19 +60,16 @@ class Identifier(Node):
 
 
 class Variable(Node):
-    def __init__(self,name):
+    def __init__(self, name):
         dprint('- In Var', f'{name.value}')
         self.name = name.value
         if self.name in data_dict:
             self.value = data_dict[self.name]
-            dprint('in dict')
             dprint(self.value)
         else:
             self.value = None
 
     def eval(self):
-        dprint('was here', self.value)
-        #if(self.value is None)
         return self.value
 
     def update_value(self,new_value):
@@ -81,32 +77,27 @@ class Variable(Node):
 
 
 class Assignment(Node):
-    def __init__(self,name,expr):
+    def __init__(self, name, expr):
         self.value = None
         dprint('- In Assignment')
-        dprint(f'name = {name}')
-        dprint(f'expr = {expr}')
-        #print(f'expr.eval() = {expr.value}')
+        dprint(f'-- name = {name}')
+        dprint(f'-- expr = {expr}')
         self.name = name.value
         self.var = Variable(name)
         self.expr = expr
-        result = self.expr.value
-        if expr.name == 'INTEGER':
-            result = int(result)
-        elif expr.name == 'FLOAT':
-            result = float(result)
-        else:
-            print('Unhandled variable case')
-        data_dict[self.name] = result
-        dprint('x is', type(result))
-        self.var.update_value( result )
 
     def eval(self):
-        dprint('yes2')
-        val = self.expr.eval()
-        self.var.update_value(val)
-        data_dict[self.name] = val
-        #return val
+        expr = self.expr
+        if not hasattr(expr, 'value'):
+            result = expr.eval()
+        else:
+            result = expr.value
+            if type(result) is str and expr.name == 'INTEGER':
+                result = int(result)
+            elif type(result) is str and expr.name == 'FLOAT':
+                result = float(result)
+        data_dict[self.name] = result
+        self.var.update_value(result)
 
 
 class Float(Node):

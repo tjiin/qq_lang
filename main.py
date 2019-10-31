@@ -3,13 +3,11 @@ from parser33 import parser
 from pprint import *
 from ast import data_dict
 
-"""
-TODO: Implicit multiplication kind of works but '(1) (2)' would be incorrectly parsed as multiplying...
-"""
-
 
 def f(code):
-    return parser.parse(lexer.lex(code)).eval()
+    parsed = parser.parse(lexer.lex(code))
+    print(parsed)
+    return parsed.eval()
 
 
 def gen_tokens(code):
@@ -23,22 +21,12 @@ def main():
                   '(-5)(-5)', '(1)*(2)/(3)', '2(9)',
                    'let x = 10', 'x+1', 'let temp = 98.6', 'let x = 2 * 532']
 
-
-
     # BREAKING CASES: '((-4/2)(2)(-100))+1', '(-4/2)(2)(100)+1
-    try:
-      for i,x in enumerate(statements):
+
+    for x in statements:
         print('-'*10)
-        print(x)
         print(x, '=', f(x))
-    except Exception as e:
-      print(e)
-      for y in gen_tokens(x):
-        print(y)
-      pprint(data_dict)
-
-    print('Finished')
-
+        pprint(data_dict)
 
 
 if __name__ == '__main__':

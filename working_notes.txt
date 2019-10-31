@@ -10,6 +10,9 @@
 # DIGIT? or no point going to deeper level?
 # CHAR?
 
+TODO: Implicit multiplication kind of works but '(1) (2)' would be incorrectly parsed as multiplying...
+TODO: Handle assigning boolean expressions to variables
+
 -----------------
 
 ( 03:54:30 PM | Tue Oct 29 2019 )
