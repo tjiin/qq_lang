@@ -34,13 +34,12 @@ simple_var_assign = [
 new_line_expr = [
     ('2 line add/sub', r'1+1 \n 10-2', [2, 8]),
     ('2 line add/sub/mul/div', r' 2(-9.18/0.02) + 17 \n 1/2*(10-(-5)) ', [-901, 7.5]),
-    ('3 line arithmetic', r'-3*3 \n 84/2 \n 9+8-6*5', [9, 42, -13]),
+    ('3 line arithmetic', r'-3*3 \n 84/2 \n 9+8-6*5', [-9, 42, -13]),
 
 ]
 
 new_line_var = [
-    ('two line assign eval', r'let x = 10 \n x + 1', 'x', 11),
-
+    ('2 line assign eval', r'let x = 10 \n x + 1', 'x', 11)
 ]
 
 

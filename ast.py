@@ -1,6 +1,6 @@
 from rply.token import BaseBox
 from lexer import dprint
-
+from pprint import *
 global data_dict
 global line_count
 
@@ -15,6 +15,26 @@ class Node(BaseBox):
 class NEWLINE():
     global line_count
     line_count += 1
+
+
+class Block(Node):
+    def __init__(self, statement):
+        #print(statement)
+        self.statements = [statement]
+
+    def add_statement(self, statement):
+        #print('add_statement: ', statement)
+        self.statements.append(statement)
+
+    def eval(self):
+        print('- Eval Block')
+        results = []
+        for i, s in enumerate(reversed(self.statements)):
+            print(f'-- {i}, {s}, {s.eval()}')
+            results.append(s.eval())
+        if len(results) == 1:
+            results = results[0]
+        return results
 
 
 class CompoundStatement(Node):
@@ -135,7 +155,7 @@ class BinaryOp(Node):
 
 class Add(BinaryOp):
     def eval(self):
-        print(self.left, self.right.eval())
+        #print(self.left, self.right.eval())
         result = self.left.eval() + self.right.eval()
         #print( f'Add({self.left.eval()}, {self.right.eval()}) = {result}' )
         return self.left.eval() + self.right.eval()
@@ -150,8 +170,8 @@ class Sub(BinaryOp):
 
 class Mul(BinaryOp):
     def eval(self):
-        dprint( self.left.eval, self.right )
-        dprint( type(self.left.eval()), type(self.right.eval()) )
+        #dprint( self.left.eval, self.right )
+        #dprint( type(self.left.eval()), type(self.right.eval()) )
         return self.left.eval() * self.right.eval()
 
 

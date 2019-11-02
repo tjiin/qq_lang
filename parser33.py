@@ -30,9 +30,25 @@ pg = ParserGenerator(
 )
 
 
-@pg.production('main : statement')
+@pg.production('main : block')
 def program(p):
     return p[0]
+
+
+@pg.production('block : statement')
+def main_block(p):
+    b = Block(p[0])
+    return b
+
+
+@pg.production('block : statement block')
+def block_statement(p):
+    if type(p[1]) is Block:
+        b = p[1]
+    else:
+        b = Block(p[1])
+    b.add_statement(p[0])
+    return b
 
 
 @pg.production('statement : stmt NEWLINE stmt')
@@ -40,9 +56,22 @@ def program(p):
 @pg.production('statement : stmt $end')
 def statement(p):
     if len(p) == 3:
-        #print('statement : stmt NEWLINE stmt')
         return CompoundStatement(p[0], p[2])
     return p[0]
+
+
+@pg.production('stmt : LET IDENTIFIER = expr')
+def assign_id(p):
+    #dprint(p)
+    if hasattr(p[3], 'left') and hasattr(p[3], 'right'):
+        dprint(p[3].left)
+        dprint(p[3].right)
+    return Assignment(p[1], p[3])
+
+
+@pg.production('expr : IDENTIFIER')
+def eval_id(p):
+    return Variable(p[0])
 
 
 @pg.production('stmt : expr')
@@ -50,23 +79,9 @@ def stmt(p):
     return p[0]
 
 
-@pg.production('stmt : LET IDENTIFIER = expr')
-def assign_id(p):
-    dprint(p)
-    if hasattr(p[3], 'left') and hasattr(p[3], 'left'):
-        dprint(p[3].left)
-        dprint(p[3].right)
-    return Assignment(p[1], p[3])
-
-
 @pg.production('expr : number')
 def eval_base(p):
     return p[0]
-
-
-@pg.production('expr : IDENTIFIER')
-def eval_id(p):
-    return Variable(p[0])
 
 
 @pg.production('expr : LPAREN expr RPAREN')

@@ -89,6 +89,14 @@ IDEA: ('case1', '1+1', eval(self[-1])) ) => ('case1', '1+1', 2)
 - 2 line variable assign/eval works as well but there's another jump to getting 3+ lines
 - unittests for multiple lines is a lot of inefficient gymnastics atm
 
+( 07:12:10 AM | Sat Nov 02 2019 )
+- basically have 3+ line blocks working
+- looked at Braid github a bit, felt a little like cheating but I want to get past this area soon
+  and all the code is still my own take
+- some problems now parsing variables on different lines, gonna call it a night
+- CompoundStatement isn't needed anymore now that we have blocks
+    - appending statement lines to a Block object and then evaluating them all in a loop
+
 
 
 
