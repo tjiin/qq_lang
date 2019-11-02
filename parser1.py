@@ -2,13 +2,13 @@ from rply import ParserGenerator
 from ast import *
 from pprint import *
 import warnings
-warnings.filterwarnings('ignore')
+#warnings.filterwarnings('ignore')
 
 pg = ParserGenerator(
     # A list of all token names, accepted by the parser.
     ['INTEGER', 'FLOAT', 'OPEN_PARENS', 'CLOSE_PARENS',
      'PLUS', 'NEGATIVE', 'MINUS', 'MUL', 'DIV', 'LET', 'IDENTIFIER', '=', 'ASSIGNMENT',
-     'NEWLINE', 'POW'],
+     'NEWLINE', 'POW', 'START'],
 
     # A list of precedence rules with ascending precedence, to
     # disambiguate ambiguous production rules.
@@ -21,10 +21,13 @@ pg = ParserGenerator(
     ]
 )
 
+# not expected because of what comes before or after you
+# {Start} 1 -> unexpected integer
+# LET -> unexpected let
 
-
+@pg.production('statement : START')
+@pg.production('statement : LET IDENTIFIER = expression')
 @pg.production('statement : expression')
-@pg.production('statement : assignment')
 def statement_expr(p):
     return p[0]
 
@@ -44,7 +47,7 @@ def expression_parens(p):
 def pow_expression(p):
     return Pow(p[1], p[3].eval())
 
-@pg.production('assignment : LET IDENTIFIER = expression')
+@pg.production('statement : LET IDENTIFIER = expression')
 def assign_expr(p):
     return Assignment(p[1], p[3])
 

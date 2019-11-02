@@ -1,10 +1,21 @@
 
-- exponents
+[x]exponents
+- multiple lines
+- different variable declarations
 - functions
 - different data types
-- different variable declarations
+
 - program structure, parsing, etc
 
+# DIGIT? or no point going to deeper level?
+# CHAR?
+
+TODO: Implicit multiplication kind of works but '(1) (2)' would be incorrectly parsed as multiplying...
+TODO: Handle assigning boolean expressions to variables
+
+IDEA: ('case1', '1+1', eval(self[-1])) ) => ('case1', '1+1', 2)
+--> assigning element while declaring in relation to other elements
+-----------------
 
 ( 03:54:30 PM | Tue Oct 29 2019 )
 - take a break then try adding lines and other data types
@@ -12,3 +23,72 @@
 ( 05:43:45 PM | Tue Oct 29 2019 )
 - added exponents which needed new rules/patterns and order of operations update
 - added more negative cases like -(-2), 1*-1 and ---(3)
+
+( 04:25:30 PM | Wed Oct 30 2019 )
+- spent last half hour getting pycharm installed and looking ok
+- now fixing all suggestions
+- was close to getting variables working but then things started to break again
+- experimented with NO_EQUALS in parsing variable assignments for a while
+
+( 07:20:46 PM | Wed Oct 30 2019 )
+- all tests in main work, committed to new branch
+- variable assignments to complex expressions seem to work
+    - e.g. let num = 292.1*(0.24^(-1))
+- still have 5 shift/reduce warnings
+- starting work on multiple lines
+
+( 10:15:40 PM | Wed Oct 30 2019 )
+- got pretty heavy into debugging, learned a lot about tracing things through the stack
+- pycharm or a good IDE is absolutely necessary...
+- writing unit tests for the past while, wasting a bit of time trying to be too fancy
+
+( 11:25:34 PM | Wed Oct 30 2019 )
+- found a better and simpler unit test method after trying a few
+    - easy to parametrize and print all cases and results
+- most tests written for where interpreter is at
+- still some weird broken cases and things left hanging like ((2)(2)(2))
+- can't unittest variables at this point
+
+( 04:41:29 AM | Thu Oct 31 2019 )
+- starting work again, target is multiline
+
+( 06:51:10 AM | Thu Oct 31 2019 )
+- figured out a way to unittest variables at this stage
+    - pretty surprised that "let x = 19+(2*42/(-0.125))" worked
+    - but the name storage model atm is disturbing
+- spent the last hour+ reading about terminal vs nonterminal symbols, context-free grammars,
+  polish notation (and reverse), statements vs expressions and python's EBNF ...
+
+( 09:08:05 AM | Thu Oct 31 2019 )
+- skipped 1930, emailed neda
+- after searching google on and off for hours and looking at different parsers altogether to
+  figure out how to handle new lines I finally found an amazing github repo, now using this
+        - program : statement
+          statement : stmt NEWLINE
+          statement : stmt $end
+
+        - NEWLINE and $end aren't tokens, NEWLINE is regex, $end is special value I noticed earlier
+        - removing the 3rd production rule with $end causes every single unit test to fail
+        - ......
+
+- still can't parse multiple lines but this feels like the missing piece
+
+( 03:18:11 AM | Sat Nov 02 2019 )
+- starting work again, nothing much happened since last entry
+
+( 05:26:06 AM | Sat Nov 02 2019 )
+- got 2 line statements working in the past hour(!)
+- starting to understand the parser a lot more
+    - it uses production rules to try to replace the most tokens with a single nonterminal
+      and then evaluates that
+- the trick was @pg.production('statement : stmt NEWLINE stmt') and then handling that as
+  a CompoundStatement where we evaluate each line on it's own
+    - before we would parse all the way to e.g. Add NEWLINE SUB and then just throw out
+      the SUB because ADD NEWLINE taken together is a stmt
+    - obviously you can't eval every line on its own but this is a start
+- 2 line variable assign/eval works as well but there's another jump to getting 3+ lines
+- unittests for multiple lines is a lot of inefficient gymnastics atm
+
+
+
+
