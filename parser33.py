@@ -13,7 +13,7 @@ pg = ParserGenerator(
      'NEGATIVE', 'PLUS', 'MINUS', 'MUL', 'DIV', 'POW', 'CARET', 'MOD',
      'LET', 'IDENTIFIER', '=', '==', '!=', 'IF', 'AND', 'OR', 'NOT', 'ELSE', 'ELIF',
      'FUNCTION', '<', '>', '<=', '>=',
-     'START', 'END', 'NO_EQUALS', 'NEWLINE', '$end'],
+     'START', 'END', 'NEWLINE', '$end'],
     # List of precedence rules in ascending order
     precedence=[
         ('left', ['LET']),
@@ -35,10 +35,13 @@ def program(p):
     return p[0]
 
 
+@pg.production('statement : stmt NEWLINE stmt')
 @pg.production('statement : stmt NEWLINE')
 @pg.production('statement : stmt $end')
-@pg.production('statement : stmt NEWLINE stmt')
 def statement(p):
+    if len(p) == 3:
+        #print('statement : stmt NEWLINE stmt')
+        return CompoundStatement(p[0], p[2])
     return p[0]
 
 
@@ -107,10 +110,8 @@ def binop_num_expr(p):
     left = p[0]
     right = p[2]
     if p[1].gettokentype() == 'PLUS':
-        print('add sent to eval')
         return Add(left, right)
     elif p[1].gettokentype() == 'MINUS':
-        print('sub sent to eval')
         return Sub(left, right)
     elif p[1].gettokentype() == 'MUL':
         return Mul(left, right)

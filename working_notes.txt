@@ -73,5 +73,22 @@ IDEA: ('case1', '1+1', eval(self[-1])) ) => ('case1', '1+1', 2)
 
 - still can't parse multiple lines but this feels like the missing piece
 
+( 03:18:11 AM | Sat Nov 02 2019 )
+- starting work again, nothing much happened since last entry
+
+( 05:26:06 AM | Sat Nov 02 2019 )
+- got 2 line statements working in the past hour(!)
+- starting to understand the parser a lot more
+    - it uses production rules to try to replace the most tokens with a single nonterminal
+      and then evaluates that
+- the trick was @pg.production('statement : stmt NEWLINE stmt') and then handling that as
+  a CompoundStatement where we evaluate each line on it's own
+    - before we would parse all the way to e.g. Add NEWLINE SUB and then just throw out
+      the SUB because ADD NEWLINE taken together is a stmt
+    - obviously you can't eval every line on its own but this is a start
+- 2 line variable assign/eval works as well but there's another jump to getting 3+ lines
+- unittests for multiple lines is a lot of inefficient gymnastics atm
+
+
 
 

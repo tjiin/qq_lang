@@ -17,17 +17,21 @@ class NEWLINE():
     line_count += 1
 
 
-class NoEquals(Node):
-    def __init__(self,token):
-        self.name = token.name
-        self.value = token.value
+class CompoundStatement(Node):
+    def __init__(self, first, second):
+        self.first = first
+        self.second = second
 
     def eval(self):
-        return self.name  
+        #print( self.first.eval(), self.second.eval() )
+        #return f'{self.first.eval()} {self.second.eval()}'
+        data_dict['output'] = [self.first.eval(), self.second.eval()]
+        return [self.first.eval(), self.second.eval()]
+
 
 
 class Line(Node):
-    def __init__(self,token):
+    def __init__(self, token):
         global data_dict
         global line_count
         self.name = token.name
@@ -44,12 +48,6 @@ class StructureConstant(Node):
         self.name = token.name
         self.value = token.value
         self.line = Line(token)
-"""        if self.name == 'START':
-            line_count = 0
-            data_dict = 0"""
-
-"""    def eval(self):
-        return self.name"""
 
 
 class Identifier(Node):
@@ -77,7 +75,7 @@ class Variable(Node):
     def eval(self):
         return self.value
 
-    def update_value(self,new_value):
+    def update_value(self, new_value):
         self.value = new_value
 
 
@@ -90,6 +88,7 @@ class Assignment(Node):
         self.name = name.value
         self.var = Variable(name)
         self.expr = expr
+        self.eval()
 
     def eval(self):
         expr = self.expr
@@ -103,6 +102,7 @@ class Assignment(Node):
                 result = float(result)
         data_dict[self.name] = result
         self.var.update_value(result)
+        #return result
 
 
 class Float(Node):
@@ -135,18 +135,17 @@ class BinaryOp(Node):
 
 class Add(BinaryOp):
     def eval(self):
-        print('ADD IN EVAL')
-        #print( type(self.left.eval()), type(self.right.eval()) )
-        print( self.left.eval() + self.right.eval() )
-        print(self.right.eval() )
-        return self.left.eval().add(self.right.eval())
+        print(self.left, self.right.eval())
+        result = self.left.eval() + self.right.eval()
+        #print( f'Add({self.left.eval()}, {self.right.eval()}) = {result}' )
+        return self.left.eval() + self.right.eval()
 
 
 class Sub(BinaryOp):
     def eval(self):
-        print('SUB IN EVAL')
-        print(self.left.eval() - self.right.eval())
-        return self.left.eval().sub(self.right.eval())
+        result = self.left.eval() - self.right.eval()
+        #print( f'Sub({self.left.eval()}, {self.right.eval()}) = {result}' )
+        return self.left.eval() - self.right.eval()
 
 
 class Mul(BinaryOp):
