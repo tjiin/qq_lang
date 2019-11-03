@@ -1,33 +1,88 @@
 from rply.token import BaseBox
 from lexer import dprint
-
+from pprint import *
 global data_dict
 global line_count
 
 
+
 class Node(BaseBox):
-    global data_dict
-    global line_count
-    data_dict = {}
-    line_count = 0
+    def __init__self(self):
+        global data_dict
+        global line_count
+        data_dict = {}
+        line_count = 0
 
 
-class NEWLINE():
-    global line_count
-    line_count += 1
 
 
-class CompoundStatement(Node):
-    def __init__(self, first, second):
-        self.first = first
-        self.second = second
+
+
+class Block(Node):
+    def __init__(self, statement):
+        #print(statement)
+        self.statements = [statement]
+
+    def add_statement(self, statement):
+        #print('add_statement: ', statement)
+        self.statements.append(statement)
+
+    def eval(self, namespace='global'):
+        print('- Block eval()')
+        results = []
+        for i, s in enumerate(reversed(self.statements)):
+            print(f'-- {i}, {s}, {s.eval()}')
+            results.append(s.eval())
+        if len(results) == 1:
+            results = results[0]
+        return results
+
+
+class FunctionCall(Node):
+    def __init__(self, name, args=None):
+        self.name = name
+        self.args = args
 
     def eval(self):
-        #print( self.first.eval(), self.second.eval() )
-        #return f'{self.first.eval()} {self.second.eval()}'
-        data_dict['output'] = [self.first.eval(), self.second.eval()]
-        return [self.first.eval(), self.second.eval()]
+        print(f'FunctionCall : name = {self.name}')
+        print(f'FunctionCall : args = {self.args.eval()}')
 
+
+class FunctionDef(Node):
+    def __init__(self, name, block, args=None, ret=None):
+        self.name = name
+        self.block = block
+        self.args = args  # should always be either None or list of strings (can be length 1)
+        self.ret = ret
+
+    def eval(self):
+
+
+
+
+
+
+
+class ArgList(Node):
+    def __init__(self, arg):
+        self.args = [arg]
+
+    def add_arg(self, arg):
+        self.args.append(arg)
+
+    def eval(self, caller):
+        results = []
+        for i, a in enumerate(reversed(self.args)):
+            if type(caller) is FunctionCall:
+                val = a.eval() if not hasattr(a, 'value') else a.value
+            elif type(caller) is FunctionDef:
+                val = a.name
+            else:
+                raise ValueError(f'Unknown caller type in ArgList.eval(): {type(caller)}')
+            results.append(val)
+        if len(results) == 1 and type(caller) is FunctionCall:
+            results = results[0]
+        return results
 
 
 class Line(Node):
@@ -135,7 +190,7 @@ class BinaryOp(Node):
 
 class Add(BinaryOp):
     def eval(self):
-        print(self.left, self.right.eval())
+        #print(self.left, self.right.eval())
         result = self.left.eval() + self.right.eval()
         #print( f'Add({self.left.eval()}, {self.right.eval()}) = {result}' )
         return self.left.eval() + self.right.eval()
@@ -150,8 +205,8 @@ class Sub(BinaryOp):
 
 class Mul(BinaryOp):
     def eval(self):
-        dprint( self.left.eval, self.right )
-        dprint( type(self.left.eval()), type(self.right.eval()) )
+        #dprint( self.left.eval, self.right )
+        #dprint( type(self.left.eval()), type(self.right.eval()) )
         return self.left.eval() * self.right.eval()
 
 
