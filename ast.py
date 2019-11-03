@@ -5,16 +5,17 @@ global data_dict
 global line_count
 
 
+
 class Node(BaseBox):
-    global data_dict
-    global line_count
-    data_dict = {}
-    line_count = 0
+    def __init__self(self):
+        global data_dict
+        global line_count
+        data_dict = {}
+        line_count = 0
 
 
-class NEWLINE():
-    global line_count
-    line_count += 1
+
+
 
 
 class Block(Node):
@@ -26,8 +27,8 @@ class Block(Node):
         #print('add_statement: ', statement)
         self.statements.append(statement)
 
-    def eval(self):
-        print('- Eval Block')
+    def eval(self, namespace='global'):
+        print('- Block eval()')
         results = []
         for i, s in enumerate(reversed(self.statements)):
             print(f'-- {i}, {s}, {s.eval()}')
@@ -37,17 +38,51 @@ class Block(Node):
         return results
 
 
-class CompoundStatement(Node):
-    def __init__(self, first, second):
-        self.first = first
-        self.second = second
+class FunctionCall(Node):
+    def __init__(self, name, args=None):
+        self.name = name
+        self.args = args
 
     def eval(self):
-        #print( self.first.eval(), self.second.eval() )
-        #return f'{self.first.eval()} {self.second.eval()}'
-        data_dict['output'] = [self.first.eval(), self.second.eval()]
-        return [self.first.eval(), self.second.eval()]
+        print(f'FunctionCall : name = {self.name}')
+        print(f'FunctionCall : args = {self.args.eval()}')
 
+
+class FunctionDef(Node):
+    def __init__(self, name, block, args=None, ret=None):
+        self.name = name
+        self.block = block
+        self.args = args  # should always be either None or list of strings (can be length 1)
+        self.ret = ret
+
+    def eval(self):
+
+
+
+
+
+
+
+class ArgList(Node):
+    def __init__(self, arg):
+        self.args = [arg]
+
+    def add_arg(self, arg):
+        self.args.append(arg)
+
+    def eval(self, caller):
+        results = []
+        for i, a in enumerate(reversed(self.args)):
+            if type(caller) is FunctionCall:
+                val = a.eval() if not hasattr(a, 'value') else a.value
+            elif type(caller) is FunctionDef:
+                val = a.name
+            else:
+                raise ValueError(f'Unknown caller type in ArgList.eval(): {type(caller)}')
+            results.append(val)
+        if len(results) == 1 and type(caller) is FunctionCall:
+            results = results[0]
+        return results
 
 
 class Line(Node):

@@ -97,6 +97,13 @@ IDEA: ('case1', '1+1', eval(self[-1])) ) => ('case1', '1+1', 2)
 - CompoundStatement isn't needed anymore now that we have blocks
     - appending statement lines to a Block object and then evaluating them all in a loop
 
-
+( 06:56:23 PM | Sat Nov 02 2019 )
+- working for past 2.5 hours maybe
+- problems from this morning with multiline variables were all regex related
+    - let was only matching at start of string
+- function calls with multiple arguments working
+    e.g.   let x = 10
+           print((x+1)*18, x)
+- of course we don't have function definitions or any actual functions to call..
 
 

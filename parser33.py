@@ -3,13 +3,13 @@ from ast import *
 from lexer import dprint
 from pprint import *
 import warnings
-warnings.filterwarnings('ignore')
+#warnings.filterwarnings('ignore')
 
 
 pg = ParserGenerator(
     # List of all token names accepted by the parser
     ['INTEGER', 'FLOAT', 'STRING', 'BOOL',
-     'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE', 'LSQR', 'RSQR',
+     'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE', 'LSQR', 'RSQR', 'COMMA',
      'NEGATIVE', 'PLUS', 'MINUS', 'MUL', 'DIV', 'POW', 'CARET', 'MOD',
      'LET', 'IDENTIFIER', '=', '==', '!=', 'IF', 'AND', 'OR', 'NOT', 'ELSE', 'ELIF',
      'FUNCTION', '<', '>', '<=', '>=',
@@ -18,6 +18,7 @@ pg = ParserGenerator(
     precedence=[
         ('left', ['LET']),
         ('left', ['=']),
+        ('left', ['COMMA']),  # fixes 1 shift/reduce, not sure if best location
         ('left', ['FLOAT', 'INTEGER']),
         ('right', ['POW']),
         ('left', ['NEWLINE']),
@@ -43,6 +44,7 @@ def main_block(p):
 
 @pg.production('block : statement block')
 def block_statement(p):
+    print('block : statement block')
     if type(p[1]) is Block:
         b = p[1]
     else:
@@ -51,32 +53,60 @@ def block_statement(p):
     return b
 
 
-@pg.production('statement : stmt NEWLINE stmt')
 @pg.production('statement : stmt NEWLINE')
 @pg.production('statement : stmt $end')
 def statement(p):
-    if len(p) == 3:
-        return CompoundStatement(p[0], p[2])
     return p[0]
+
+
+@pg.production('stmt : function_call')
+def func_call_stmt(p):
+    return p[0]
+
+
+@pg.production('function_call : IDENTIFIER LPAREN RPAREN')
+@pg.production('function_call : IDENTIFIER LPAREN arg_list RPAREN')
+def func_call(p):
+    if len(p) == 3:
+        return FunctionCall(p[0])
+    else:
+        return FunctionCall(p[0], p[2])
+
+
+#@pg.production('arg_list : IDENTIFIER')
+@pg.production('arg_list : expr')
+def single_arg(p):
+    a = ArgList(p[0])
+    return a
+
+
+@pg.production('arg_list : expr COMMA arg_list')
+#@pg.production('arg_list : IDENTIFIER COMMA arg_list')
+def arg_list(p):
+    if type(p[2]) is ArgList:
+        a = p[2]
+    else:
+        a = ArgList(p[2])
+    a.add_arg(p[0])
+    return a
 
 
 @pg.production('stmt : LET IDENTIFIER = expr')
 def assign_id(p):
-    #dprint(p)
     if hasattr(p[3], 'left') and hasattr(p[3], 'right'):
         dprint(p[3].left)
         dprint(p[3].right)
     return Assignment(p[1], p[3])
 
 
-@pg.production('expr : IDENTIFIER')
-def eval_id(p):
-    return Variable(p[0])
-
-
 @pg.production('stmt : expr')
 def stmt(p):
     return p[0]
+
+
+@pg.production('expr : IDENTIFIER')
+def eval_id(p):
+    return Variable(p[0])
 
 
 @pg.production('expr : number')
