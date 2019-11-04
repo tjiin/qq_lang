@@ -1,0 +1,3 @@
+- homoiconicity, lisp
+- statically typed and immutable by default but can declare variables that aren't?
+- middle ground between hard functional programming languages like haskell and javascript or python?

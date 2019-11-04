@@ -1,7 +1,5 @@
 from unittest import TestCase
-from interp import interpret
-from ast import data_dict
-from lexer import lexer
+from parser33 import parse
 
 two_arg_arithmetic = [
     ('add 2 pos', '1 + 1'), ('sub 2 pos', '8 - 4'), ('mul 2 pos', '4 * 8',), ('div 2 pos', '12 / 3'),
@@ -48,34 +46,32 @@ class TestInterpreter(TestCase):
         for m, p1 in two_arg_arithmetic:
             with self.subTest(msg=m, case=p1, expected=eval(p1)):
                 print(f'---{p1}---')
-                self.assertEqual(eval(p1), interpret(p1))
+                self.assertEqual(eval(p1), parse(p1))
 
     def test_harder_arithmetic(self):
         for m, p1 in harder_arithmetic:
             with self.subTest(msg=m, case=p1, expected=eval(p1)):
-                self.assertEqual(eval(p1), interpret(p1))
+                self.assertEqual(eval(p1), parse(p1))
 
     def test_implicit_multiplication(self):
         for m, p1, ans in implicit_multiply:
             with self.subTest(msg=m, case=p1, expected=ans):
-                self.assertEqual(ans, interpret(p1))
+                self.assertEqual(ans, parse(p1))
 
     def test_simple_variable_assignment(self):
         for m, p1, var, ans in simple_var_assign:
             with self.subTest(msg=m, case=p1, expected=ans):
-                interpret(p1)
-                self.assertEqual(ans, data_dict[var])
+                result = parse(p1)
+                self.assertEqual(ans, result[0])
 
     def test_new_line_expr(self):
         for m, p1, ans in new_line_expr:
             with self.subTest(msg=m, case=p1, expected=ans):
-                #print(interpret(p1))
-                #print(data_dict['output'])
-                self.assertEqual(ans, interpret(p1))
+                result = parse(p1)
+                self.assertEqual(ans, result)
 
     def test_new_line_var(self):
         for m, p1, var, ans in new_line_var:
             with self.subTest(msg=m, case=p1, expected=ans):
-                #print(interpret(p1))
-                #print(data_dict[var])
-                self.assertEqual(ans, interpret(p1)[1])
+                result = parse(p1)
+                self.assertEqual(ans, result[1])
