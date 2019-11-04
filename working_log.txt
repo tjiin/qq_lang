@@ -119,3 +119,9 @@ IDEA: ('case1', '1+1', eval(self[-1])) ) => ('case1', '1+1', 2)
     - "wait, no that actually doesn't make any sense"
     - still lots of different bugs and things to figure out
 - wrote "Compile" class (in heavy quotes lol) that makes printing and examining output easier
+
+( 09:21:46 AM | Mon Nov 04 2019 )
+- rewrote unittests for compile object
+- more function definitions working
+- starting to make silly mistakes and have to go to class soon..
+- ast needs pretty big rewrite once fleshed out more
