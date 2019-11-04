@@ -10,10 +10,22 @@ from pprint import *
 # code = r' let x = 18 \n print((x+1)*10, x) '
 # code = r' print(10, 11, 12*-10) '
 # code = r' test(x,y,z)'
-code = r' function test(a){ ' \
-       r'   a = a * 10' \
-       r'   return(a)' \
-       r'   }'
 
-program = Compile(code)
+# code1 = r' function test(a) { a = 10 \n return(a * 10 + 2) } '
+# code2 = r' test(2) '
+
+code1 = r' function test(a) { a = a * 10 \n return(a + 2) } \n test(2) '
+# code2 = r' test(2) '
+
+# code1 = r' function test(a) { let b = 10 \n return(b * 10 + a) } '
+# code2 = r' test(5) '
+
+program = Compile(code1)
+space = program.namespace
 program.print_full()
+
+"""print('-'*50)
+program = Compile(code2, space=space)
+program.print_full()"""
+
+

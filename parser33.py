@@ -14,10 +14,11 @@ pg = ParserGenerator(
      'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE', 'LSQR', 'RSQR', 'COMMA',
      'NEGATIVE', 'PLUS', 'MINUS', 'MUL', 'DIV', 'POW', 'CARET', 'MOD',
      'LET', 'IDENTIFIER', '=', '==', '!=', 'IF', 'AND', 'OR', 'NOT', 'ELSE', 'ELIF',
-     'FUNCTION', '<', '>', '<=', '>=',
+     'FUNCTION', 'RETURN', '<', '>', '<=', '>=',
      'START', 'END', 'NEWLINE', '$end'],
     # List of precedence rules in ascending order
     precedence=[
+        ('left', ['FUNCTION']),
         ('left', ['LET']),
         ('left', ['=']),
         ('left', ['COMMA']),  # fixes 1 shift/reduce, not sure if best location
@@ -66,6 +67,11 @@ def func_call_stmt(state, p):
     return p[0]
 
 
+@pg.production('stmt : function_def')
+def func_def_stmt(state, p):
+    return p[0]
+
+
 @pg.production('function_call : IDENTIFIER LPAREN RPAREN')
 @pg.production('function_call : IDENTIFIER LPAREN arg_list RPAREN')
 def func_call(state, p):
@@ -74,8 +80,33 @@ def func_call(state, p):
     else:
         return FunctionCall(p[0], p[2])
 
-@pg.production('function_call : IDENTIFIER LPAREN RPAREN')
-@pg.production('function_call : IDENTIFIER LPAREN arg_list RPAREN')
+#                                  0        1         2      3       4      5      6     7      8
+# FunctionDef(name, block=None, args=None, return_stmt=None)
+@pg.production('function_def : FUNCTION IDENTIFIER LPAREN arg_list RPAREN LBRACE block return RBRACE')
+@pg.production('function_def : FUNCTION IDENTIFIER LPAREN arg_list RPAREN LBRACE return RBRACE')
+@pg.production('function_def : FUNCTION IDENTIFIER LPAREN arg_list RPAREN LBRACE block RBRACE')
+@pg.production('function_def : FUNCTION IDENTIFIER LPAREN arg_list RPAREN LBRACE stmt RBRACE')
+def func_def(state, p):
+    if len(p) == 9:
+        return FunctionDef(p[1], p[6], p[3], p[7])
+    elif p[6].getttokentype() == 'return':
+        return FunctionDef(p[1], args=p[3], return_stmt=p[7])
+    else:
+        return FunctionDef(p[1], block=p[6], args=p[3])  # block or stmt body
+
+#                                  0        1         2      3     4      5      6     7
+# FunctionDef(name, block=None, args=None, return_stmt=None)
+@pg.production('function_def : FUNCTION IDENTIFIER LPAREN RPAREN LBRACE block return RBRACE')
+@pg.production('function_def : FUNCTION IDENTIFIER LPAREN RPAREN LBRACE return RBRACE')
+@pg.production('function_def : FUNCTION IDENTIFIER LPAREN RPAREN LBRACE block RBRACE')
+@pg.production('function_def : FUNCTION IDENTIFIER LPAREN RPAREN LBRACE stmt RBRACE')
+def func_def_no_args(state, p):
+    if len(p) == 8:
+        return FunctionDef(p[1], block=p[4], return_stmt=p[6])
+    elif p[5].getttokentype() == 'return':
+        return FunctionDef(p[1], return_stmt=p[5])
+    else:
+        return FunctionDef(p[1], block=p[5])  # block or stmt body
 
 
 # @pg.production('arg_list : IDENTIFIER')
@@ -97,7 +128,7 @@ def arg_list(state, p):
 
 
 @pg.production('stmt : LET IDENTIFIER = expr')
-@pg.production('stmt : LET IDENTIFIER = expr')
+# @pg.production('stmt : LET IDENTIFIER = expr')
 def assign_id(state, p):
     if hasattr(p[3], 'left') and hasattr(p[3], 'right'):
         dprint(p[3].left)
@@ -113,6 +144,12 @@ def update_id(state, p):
 @pg.production('stmt : expr')
 def expr(state, p):
     return p[0]
+
+
+# @pg.production('return : RETURN LPAREN expr RPAREN')
+@pg.production('return : RETURN expr')
+def return_stmt(state, p):
+    return p[1]
 
 
 @pg.production('expr : IDENTIFIER')
@@ -223,11 +260,14 @@ def parse(code, state=NameSpace('@main')):
 
 
 class Compile:  # yes I know, this name should be in scare quotes..
-    def __init__(self, code):
+    def __init__(self, code, space=None):
         self.code = code
-        self.namespace = NameSpace('@main')
+        if space is None:
+            self.namespace = NameSpace('@main')
+        else:
+            self.namespace = space
         self.tokens = [t for t in lexer.lex(code)]
-        pprint(self.tokens)
+        #pprint(self.tokens)
         self.parser_output = parse(code, self.namespace)
         self.output = self.parser_output.eval(self.namespace)
 
@@ -249,7 +289,7 @@ class Compile:  # yes I know, this name should be in scare quotes..
         a = '=' * 80
         b = '-' * 80
         fmt_str = f"{{: <{space}}} {{: <{space}}}"  # "{{" to escape curly brace, equivalent to e.g. "{: <15} {: <15}"
-        print(a)
+        print('\n'+a)
         for i, row in enumerate(rows):
             print(fmt_str.format(*row))
             print(b) if i != len(rows) - 1 else print(a)

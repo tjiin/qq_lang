@@ -169,3 +169,16 @@ evaluating a function object --> ... ?
 	  			- but what if it's inside a function like here? aaaah
 	  				- calling eval in Assignment init was a mistake earlier (?)
 	  				- interesting that worked
+
+
+- simplest function test?
+	- function test(a){
+	      a = 10
+	      return(a)
+	   }
+
+
+- ** function with multiple return statements **
+
+- function block can be just a statement
+	- i.e. no new line --> "function test(a) { a = a * 10 return(a) }""
