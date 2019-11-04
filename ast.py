@@ -29,7 +29,9 @@ class NameSpace:
 
 
 
-class Node(BaseBox, space='@main'):
+
+
+class Node(BaseBox):
     def __init__self(self):
         global data_dict
         global line_count
@@ -46,25 +48,26 @@ class Block(Node):
         #print('add_statement: ', statement)
         self.statements.append(statement)
 
-    def eval(self, namespace='global'):
+    def eval(self, space):
         print('- Block eval()')
         results = []
         for i, s in enumerate(reversed(self.statements)):
-            print(f'-- {i}, {s}, {s.eval()}')
-            results.append(s.eval())
+            print(f'-- {i}, {s}, {s.eval(space)}')
+            results.append(s.eval(space))
         if len(results) == 1:
             results = results[0]
         return results
 
 
 class FunctionCall(Node):
-    def __init__(self, name, args=None):
+    def __init__(self, name, space, args=None):
         self.name = name
         self.args = args
+        self.space = space
 
-    def eval(self):
+    def eval(self, space):
         print(f'FunctionCall : name = {self.name}')
-        print(f'FunctionCall : args = {self.args.eval()}')
+        print(f'FunctionCall : args = {self.args.eval(space)}')
 
 
 class FunctionDef(Node):
@@ -74,10 +77,14 @@ class FunctionDef(Node):
         self.args = args  # should always be either None or list of strings (can be length 1)
         self.ret = ret
 
-    #def eval(self,
+    def eval(self):
+        namespace_id = f'@{self.name}({id(self)})'
+        space = NameSpace(namespace_id)`
+        return self.block.eval(space)
 
 
-
+class Return(Node):
+    def __init__(self):
 
 
 
@@ -89,11 +96,11 @@ class ArgList(Node):
     def add_arg(self, arg):
         self.args.append(arg)
 
-    def eval(self, caller):
+    def eval(self, caller, space):
         results = []
         for i, a in enumerate(reversed(self.args)):
             if type(caller) is FunctionCall:
-                val = a.eval() if not hasattr(a, 'value') else a.value
+                val = a.eval(space) if not hasattr(a, 'value') else a.value
             elif type(caller) is FunctionDef:
                 val = a.name
             else:
@@ -113,7 +120,7 @@ class Line(Node):
         self.line_num = line_count
         line_count += 1
 
-    def eval(self):
+    def eval(self, space):
         return self.name
 
 
@@ -128,11 +135,11 @@ class Identifier(Node):
     def __init__(self,name):
         self.name = str(name)
 
-    def eval(self):
-        if self.name in data_dict:
-            return data_dict[self.name]
+    def eval(self, space):
+        if self.name in space:
+            return space[self.name]
         else:
-            dprint(f'Identifier {self.name} is undefined')
+            print(f'NameSpace Error: Identifier {self.name} is undefined in NameSpace {space.name}')
             return None
 
 
@@ -146,7 +153,7 @@ class Variable(Node):
         else:
             self.value = None
 
-    def eval(self):
+    def eval(self, space):
         return self.value
 
     def update_value(self, new_value):
