@@ -97,16 +97,18 @@ def func_def(state, p):
 #                                  0        1         2      3     4      5      6     7
 # FunctionDef(name, block=None, args=None, return_stmt=None)
 @pg.production('function_def : FUNCTION IDENTIFIER LPAREN RPAREN LBRACE block return RBRACE')
-@pg.production('function_def : FUNCTION IDENTIFIER LPAREN RPAREN LBRACE return RBRACE')
 @pg.production('function_def : FUNCTION IDENTIFIER LPAREN RPAREN LBRACE block RBRACE')
 @pg.production('function_def : FUNCTION IDENTIFIER LPAREN RPAREN LBRACE stmt RBRACE')
 def func_def_no_args(state, p):
     if len(p) == 8:
-        return FunctionDef(p[1], block=p[4], return_stmt=p[6])
-    elif p[5].getttokentype() == 'return':
-        return FunctionDef(p[1], return_stmt=p[5])
+        return FunctionDef(p[1], block=p[5], return_stmt=p[6])
     else:
         return FunctionDef(p[1], block=p[5])  # block or stmt body
+
+
+@pg.production('function_def : FUNCTION IDENTIFIER LPAREN RPAREN LBRACE return RBRACE')
+def func_def_no_arg_no_block(state, p):
+    return FunctionDef(p[1], return_stmt=p[5])
 
 
 # @pg.production('arg_list : IDENTIFIER')
@@ -267,7 +269,7 @@ class Compile:  # yes I know, this name should be in scare quotes..
         else:
             self.namespace = space
         self.tokens = [t for t in lexer.lex(code)]
-        #pprint(self.tokens)
+        # pprint(self.tokens)
         self.parser_output = parse(code, self.namespace)
         self.output = self.parser_output.eval(self.namespace)
 

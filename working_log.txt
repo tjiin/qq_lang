@@ -106,4 +106,16 @@ IDEA: ('case1', '1+1', eval(self[-1])) ) => ('case1', '1+1', 2)
            print((x+1)*18, x)
 - of course we don't have function definitions or any actual functions to call..
 
-
+( 08:04:15 AM | Mon Nov 04 2019 )
+- working since midnight at least
+- function definitions and calls are parsing and evaluating
+    - added NameSpace object to every eval and production
+    - functions define their own namespace, arguments are evaluated and passed in
+    - haven't tried every type of funcdef
+- code has gotten pretty crazy
+    - parser33 and ast are both around 300 lines
+- "function test(a) { a = a * 10 \n return(a + 2) } \n test(2)" -> [None, 22]
+- figuring out difference between FunctionDef/FunctionCall and their interaction was challenging
+    - "wait, no that actually doesn't make any sense"
+    - still lots of different bugs and things to figure out
+- wrote "Compile" class (in heavy quotes lol) that makes printing and examining output easier

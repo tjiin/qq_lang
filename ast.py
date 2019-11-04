@@ -44,9 +44,13 @@ class Block(Node):
         print(f'\n*** Block eval() : {self.statements}')
         results = []
         for i, s in enumerate(reversed(self.statements)):
-            r = s.eval(space)
-            print(f'-- line index : {i} | statement : {s.name} | result = {r}')
-            results.append(r)
+            if s is not None:  # Fix all these Nones later?
+                r = s.eval(space)
+                if hasattr(s, 'name'):
+                    print(f'-- line index : {i} | statement : {s.name} | result = {r}')
+                else:
+                    print(f'-- line index : {i} | statement : {s} | result = {r}')
+                results.append(r)
         if len(results) == 1: results = results[0]
         print(f'-- Block eval() = {results}')
         return results
@@ -57,7 +61,10 @@ class FunctionCall(Node):
         if hasattr(name, 'gettokentype'):
             name = name.value
         self.name = name
-        self.args = args.get_value()  # type ArgList
+        if args is not None:
+            self.args = args.get_value()  # type ArgList
+        else:
+            self.args = args  # None
         print(f'FunctionCall init self.args = {self.args}')
         self.parent_space = None
 
@@ -77,20 +84,22 @@ class FunctionCall(Node):
         func_space = NameSpace(namespace_id)
         func_def = self.parent_space[self.name]
 
-        # not checking if len args is correct for now
-        # this is the evaluated list of arguments passed to the function
-        arg_values = [arg.eval(self.parent_space) for arg in self.args]
+        if func_def.args is not None:
+            # not checking if len args is correct for now
+            # this is the evaluated list of arguments passed to the function
+            arg_values = [arg.eval(self.parent_space) for arg in self.args]
 
-        print(f'FunctionCall evaluated arg_values = {arg_values}')
+            print(f'FunctionCall evaluated arg_values = {arg_values}')
 
-        for i, arg in enumerate(func_def.args):
-            func_space[arg.name] = arg_values[i]  # add macro method to NameSpace maybe
+            for i, arg in enumerate(func_def.args):
+                func_space[arg.name] = arg_values[i]  # add macro method to NameSpace maybe
 
         print(f"FunctionCall '{self.name}' before eval : {func_space}")
 
-        func_output = func_def.block.eval(func_space)
-
-        print(f"Final NameSpace of function '{self.name}' : {func_space}")
+        if func_def.block is not None:
+            print(func_def.block)
+            func_output = func_def.block.eval(func_space)
+            print(f"Final NameSpace of function '{self.name}' : {func_space}")
 
         if func_def.return_stmt is not None:
             # variable changes from block should be be reflected in func_space
@@ -98,8 +107,10 @@ class FunctionCall(Node):
             return_value = func_def.return_stmt.eval(func_space)
             print(f"Return value of function '{self.name}' in '{self.parent_space}' : {return_value}")
             return return_value
-        else:
+        elif func_def.block is not None:
             print(f"Line outputs of function '{self.name}' in '{self.parent_space}' : {func_output}")
+            return True
+        else:
             return True
 
 
@@ -108,7 +119,8 @@ class FunctionDef(Node):
     def __init__(self, name, block=None, args=None, return_stmt=None):
         self.name = name.value
         self.block = block
-        self.args = args.get_value()  # should always be either None or list of string names (can be length 1)
+        # args should always be either one or a list of string variable names
+        self.args = args.get_value() if args is not None else args
         print(f'FunctionDef init self.args = {self.args}')
         self.return_stmt = return_stmt
         self.space = None
@@ -192,7 +204,7 @@ class Variable(Node):
     def eval(self, space):
         # print(f"- in Variable.eval() self.name = '{self.name}'")
         if self.name not in space:
-            print(space.items())
+            # print(space.items())
             raise Exception(f"NameSpace Error: Variable '{self.name}' undefined in '{space.name}'")
         return space[self.name]  # .eval() ?
 

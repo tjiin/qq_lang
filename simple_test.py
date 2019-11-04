@@ -11,11 +11,9 @@ from pprint import *
 # code = r' print(10, 11, 12*-10) '
 # code = r' test(x,y,z)'
 
-# code1 = r' function test(a) { a = 10 \n return(a * 10 + 2) } '
-# code2 = r' test(2) '
+code1 = r' function test(a) { a = 10 \n return(a * 10 + a) } \n test(2) '
 
-code1 = r' function test(a) { a = a * 10 \n return(a + 2) } \n test(2) '
-# code2 = r' test(2) '
+# code1 = r' function test(a) { a = a * 10 \n return(a + 2) } \n test(2) '
 
 # code1 = r' function test(a) { let b = 10 \n return(b * 10 + a) } '
 # code2 = r' test(5) '
