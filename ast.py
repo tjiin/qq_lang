@@ -5,17 +5,36 @@ global data_dict
 global line_count
 
 
+# dictionary of identifiers defined in current namespace
+class NameSpace:
+    def __init__(self, name):
+        self.name = name
+        self.space = {}
 
-class Node(BaseBox):
+    def __contains__(self, item):
+        return item in self.space.keys()
+
+    def __getitem__(self, item):
+        if self.__contains__(item):
+            return self.space[item]
+        else:
+            print(f'NameSpace Error: {item} is Undefined in NameSpace {self.name}')
+            return None
+
+    def __setitem__(self, key, value):
+        self.space[key] = value
+
+    def __str__(self):
+        return f"NameSpace '{self.name}' = {self.space}"
+
+
+
+class Node(BaseBox, space='@main'):
     def __init__self(self):
         global data_dict
         global line_count
         data_dict = {}
         line_count = 0
-
-
-
-
 
 
 class Block(Node):
@@ -55,7 +74,7 @@ class FunctionDef(Node):
         self.args = args  # should always be either None or list of strings (can be length 1)
         self.ret = ret
 
-    def eval(self):
+    #def eval(self,
 
 
 

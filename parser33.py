@@ -6,6 +6,8 @@ import warnings
 #warnings.filterwarnings('ignore')
 
 
+
+
 pg = ParserGenerator(
     # List of all token names accepted by the parser
     ['INTEGER', 'FLOAT', 'STRING', 'BOOL',
@@ -27,7 +29,7 @@ pg = ParserGenerator(
         ('left', ['PLUS', 'MINUS']),
         ('left', ['MUL', 'DIV']),
     ],
-    cache_id='pg_cache1'
+    # cache_id='pg_cache1'
 )
 
 
