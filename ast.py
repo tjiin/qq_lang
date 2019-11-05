@@ -1,6 +1,9 @@
 from rply.token import BaseBox
-from lexer import dprint
 from pprint import *
+
+
+class Node(BaseBox):
+    pass
 
 
 class NameSpace:
@@ -24,20 +27,14 @@ class NameSpace:
         return f"NameSpace '{self.name}' = {self.space}"
 
     def items(self):
-        return[x for x in self.space.items()]
-
-
-class Node(BaseBox):
-    pass
+        return [x for x in self.space.items()]
 
 
 class Block(Node):
     def __init__(self, statement):
-        # print(statement)
         self.statements = [statement]
 
     def add_statement(self, statement):
-        # print('add_statement: ', statement)
         self.statements.append(statement)
 
     def eval(self, space):
@@ -65,7 +62,7 @@ class FunctionCall(Node):
             self.args = args.get_value()  # type ArgList
         else:
             self.args = args  # None
-        print(f'FunctionCall init self.args = {self.args}')
+        print(f'FunctionCall.init() : self.args = {self.args}')
         self.parent_space = None
 
     def eval(self, space):
@@ -80,7 +77,7 @@ class FunctionCall(Node):
         if self.name not in self.parent_space:
             raise Exception(f"NameSpace Error: function '{self.name}' is Undefined in '{self.parent_space}'")
 
-        namespace_id = f'{self.name}@{self.parent_space.name}({id(self)})'
+        namespace_id = f'{self.name}{self.parent_space.name}({id(self)})'
         func_space = NameSpace(namespace_id)
         func_def = self.parent_space[self.name]
 
@@ -121,7 +118,7 @@ class FunctionDef(Node):
         self.block = block
         # args should always be either one or a list of string variable names
         self.args = args.get_value() if args is not None else args
-        print(f'FunctionDef init self.args = {self.args}')
+        print(f'FunctionDef.init() self.args = {self.args}')
         self.return_stmt = return_stmt
         self.space = None
 
@@ -130,16 +127,10 @@ class FunctionDef(Node):
         space[self.name] = self
 
 
-
-"""class Return(Node):
-    def __init__(self):
-"""
-
-
 class ArgList(Node):
     def __init__(self, arg):
         self.args = [arg]
-        print(f'ArgList init self.args = {self.args}')
+        print(f'ArgList.init() self.args = {self.args}')
 
     def add_arg(self, arg):
         self.args.append(arg)
@@ -160,26 +151,6 @@ class ArgList(Node):
 
     def get_value(self):
         return self.args
-
-
-class Line(Node):
-    def __init__(self, token):
-        global data_dict
-        global line_count
-        self.name = token.name
-        self.value = token.value
-        self.line_num = line_count
-        line_count += 1
-
-    def eval(self, space):
-        return self.name
-
-
-class StructureConstant(Node):
-    def __init__(self, token):
-        self.name = token.name
-        self.value = token.value
-        self.line = Line(token)
 
 
 class Identifier(Node):
@@ -208,9 +179,6 @@ class Variable(Node):
             raise Exception(f"NameSpace Error: Variable '{self.name}' undefined in '{space.name}'")
         return space[self.name]  # .eval() ?
 
-    def update_value(self, new_value):
-        self.value = new_value
-
 
 class Assignment(Node):
     def __init__(self, name, expr):
@@ -219,31 +187,26 @@ class Assignment(Node):
         self.name = name.value
         self.expr = expr
         # self.var = Variable(name)
-        # self.eval()
 
     def eval(self, space):
         if self.name not in space:
             var = Variable(self.name)
-            #raise Exception(f"NameSpace Error: Variable '{self.name}' in Assignment ('{self.expr}') undefined in '{space.name}'")
         else:
-            print(f'Assignment eval() : Variable {self.name} already defined = {space[self.name]}')
+            print(f'Assignment.eval() : Variable {self.name} already defined = {space[self.name]}')
             var = space[self.name]
-
         expr = self.expr
         if not hasattr(expr, 'value'):
-            print(f'Assignment eval() : "{self.name}" = "{expr}"')
+            print(f'Assignment.eval() : "{self.name}" = "{expr}"')
             print('-- Need to eval assignment expr')
             result = expr.eval(space)
         else:
-            print(f'Assignment eval() : "{self.name}" = "{expr.value}"')
+            print(f'Assignment.eval() : "{self.name}" = "{expr.value}"')
             result = expr.value
             if type(result) is str and expr.name == 'INTEGER':
                 result = int(result)
             elif type(result) is str and expr.name == 'FLOAT':
                 result = float(result)
         space[self.name] = result
-        #var.update_value(result)
-        #(var.value)
 
 
 class Float(Node):
@@ -268,30 +231,88 @@ class Integer(Node):
         print(str(self.value))
 
 
+class Not(Node):
+    def __init__(self, expr):
+        self.expr = expr
+
+    def eval(self, space):
+        return not(self.expr.eval(space))
+
+
 class BinaryOp(Node):
     def __init__(self, left, right):
         self.left = left
         self.right = right
 
 
+class TrueT(Node):
+    def eval(self):
+        return True
+
+
+class FalseT(Node):
+    def eval(self):
+        return False
+
+
+class LessThanEq(BinaryOp):
+    def eval(self, space):
+        return self.left.eval(space) <= self.right.eval(space)
+
+
+class LessThan(BinaryOp):
+    def eval(self, space):
+        return self.left.eval(space) < self.right.eval(space)
+
+
+class GreaterThan(BinaryOp):
+    def eval(self, space):
+        return self.left.eval(space) > self.right.eval(space)
+
+
+class GreaterThanEq(BinaryOp):
+    def eval(self, space):
+        return self.left.eval(space) >= self.right.eval(space)
+
+
+class NotEqual(BinaryOp):
+    def eval(self, space):
+        return self.left.eval(space) != self.right.eval(space)
+
+
+class EqualTo(BinaryOp):
+    def eval(self, space):
+        return self.left.eval(space) == self.right.eval(space)
+
+
+class And(BinaryOp):
+    def eval(self, space):
+        return self.left.eval(space) and self.right.eval(space)
+
+
+class Or(BinaryOp):
+    def eval(self, space):
+        return self.left.eval(space) or self.right.eval(space)
+
+
 class Add(BinaryOp):
     def eval(self, space):
         # print(self.left, self.right.eval())
-        result = self.left.eval(space) + self.right.eval(space)
+        # result = self.left.eval(space) + self.right.eval(space)
         # print( f'Add({self.left.eval()}, {self.right.eval()}) = {result}' )
         return self.left.eval(space) + self.right.eval(space)
 
 
 class Sub(BinaryOp):
     def eval(self, space):
-        result = self.left.eval(space) - self.right.eval(space)
+        # result = self.left.eval(space) - self.right.eval(space)
         # print( f'Sub({self.left.eval()}, {self.right.eval()}) = {result}' )
         return self.left.eval(space) - self.right.eval(space)
 
 
 class Mul(BinaryOp):
     def eval(self, space):
-        # print( self.left.eval, self.right )
+        print( self.left.eval(space), self.right.eval(space) )
         return self.left.eval(space) * self.right.eval(space)
 
 
@@ -305,18 +326,15 @@ class Pow(BinaryOp):
         return self.left.eval(space) ** self.right.eval(space)
 
 
-class UnaryOp(Node):
-    def __init__(self, arg, op):
-        self.arg = arg
-        self.op = op
-
-
 class FlipSign(Node):
     def __init__(self, arg):
-        self.value = arg
+        self.expr = arg
 
     def eval(self, space):
-        return self.value.eval(space)*(-1)
+        return self.expr.eval(space) * -1
 
 
-
+class UnaryOp(Node):
+    def __init__(self, arg, oper):
+        self.arg = arg
+        self.oper = oper

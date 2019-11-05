@@ -6,6 +6,12 @@ two_arg_arithmetic = [
     ('add 2 neg', '-10 - 9'), ('sub 2 neg', '-1 - 41'), ('mul 2 neg', '-4 * -2',), ('div 2 neg', '-50 / -2'),
 ]
 
+compound_negatives = [
+    ('double neg', '--2', 2), ('trip neg', '---2', -2), ('quad neg', '----2', 2),
+    ('nested trip neg', '-(--(2))', -2), ('sub nested neg', '2--(-2)', 0),
+    ('new line single neg var', 'let x = -1 \\n -x*2', [None, 2]),
+    ('new line double neg var', 'let x = -1 \\n --x*2', -2)]
+
 harder_arithmetic = [
     ('add sub 3 float', '2.5 - 99.65 + 0.001'), ('mul div 3 float', '2.5 * 99.65 / 0.001'),
     ('add/sub/mul/div nest paren neg', '((-0.1)+2.5)*(-99.65/(9-0.001))+((2.7))'),
@@ -24,8 +30,48 @@ implicit_multiply = [
     ('implicit mul ((a)(b)(c))', '((2)(2)(2))', 8)
 ]
 
+simple_and_or_not = [
+    ('NOT no eval (1)', 'not True', False),
+    ('NOT no eval (2)', 'not False', True),
+    ('nested NOT no eval (1)', 'not(not(False))', False),
+    ('nested NOT no eval (2)', 'not(not(True))', True),
+    ('not True', 'not True', False),
+    ('2 arg OR no eval (1)', 'False or False', False),
+    ('2 arg OR no eval (2)', 'True or False', True),
+    ('2 arg OR no eval (3)', 'False or True', True),
+    ('2 arg OR no eval (4)', 'True or True', True),
+    ('2 arg AND no eval (1)', 'False and False', False),
+    ('2 arg AND no eval (2)', 'False and True', False),
+    ('2 arg AND no eval (3)', 'True and False', False),
+    ('2 arg AND no eval (4)', 'True and True', True),
+    ('AND/OR/NOT no eval (1)', 'True and False or not False', True),
+    ('AND/OR/NOT no eval (2)', 'True and False or not True', False),
+    ('AND/OR/NOT expr (1)', 'True and (False or not False)', True),
+    ('AND/OR/NOT expr (2)', 'False and True or False and True', False),
+    ('AND/OR/NOT expr (3)', 'False or (True or False) and True', True)
+]
+
+equal_not_equal = [
+    ('2 op EqualTo no eval (1)', '0 == 0', True),
+    ('2 op EqualTo no eval (2)', '0 == 1', False),
+    ('2 op EqualTo no eval (3)', '1 == 0', False),
+    ('2 op NotEqualTo no eval', '0 != 0', False),
+    ('2 op NotEqualTo no eval', '1 != 0', True),
+    ('2 op NotEqualTo no eval', '0 != 1', True),
+]
+
+comparison = [
+    ('2 op LessThan no eval (1)', '0 < 1', True),
+    ('2 op LessThan no eval (2)', '1 > 0', True),
+    ('2 op LessThan no eval (3)', '0 > 1', False),
+    ('2 op LessThan no eval (4)', '1 < 0', False),
+    ('2 op LessThanEqual no eval (1)', '2 <= 2', True),
+    ('2 op LessThanEqual no eval (2)', '2 <= 1', False),
+]
+
 simple_var_assign = [
     ('var assign int', 'let x = 19', 'x', 19),
+    ('var assign neg int', 'let x = -19', 'x', -19),
     ('var assign expr', 'let x = 19+(2*42/(-0.125))', 'x', -653),
 ]
 
@@ -37,6 +83,7 @@ new_line_expr = [
 
 new_line_var = [
     ('2 line assign eval', r'let x = 10 \n x + 1', 'x', 11),
+    ('2 line neg assign eval', r'let x = -10 \n -x * -10', 'x', -100),
 ]
 
 multi_line_vars = [
@@ -45,7 +92,11 @@ multi_line_vars = [
 
 basic_functions = [
     ('func no arg no body return', r'function f(){ return(1+1) } \n f()', [None, 2]),
-    ('func no arg return', r'function f(){ let x = 10.5 \n return(x*2) } \n f()', [None, 21])
+    ('1 line func no arg no body return', r'function f(){ return(1+1) } f()', [None, 2]),
+    ('func no arg return', r'function f(){ let x = 10.5 \n return(x*2) } \n f()', [None, 21]),
+    ('func no body return', r'function f(a,b){ return((b/-3)+a*2) } \n f(10,6)', [None, 18]),
+    ('1 line func arg body return', r'function f(a,b){ return((b/-3)+a*2) } f(10,6)', [None, 18]),
+    ('1 line func no-body return', r'function f(a,b){ return((b/-3)+a*2) } f(10,6)', [None, 18])
 ]
 
 
@@ -56,6 +107,13 @@ class TestInterpreter(TestCase):
                 program = Compile(p1)
                 print('=' * 30 + '\n' + f'{p1} = {program.output}' + '\n' + '=' * 30)
                 self.assertEqual(eval(p1), program.output)
+
+    def test_compound_negatives(self):
+        for m, p1, ans in compound_negatives:
+            with self.subTest(msg=m, case=p1, expected=ans):
+                program = Compile(p1)
+                print('=' * 30 + '\n' + f'{p1} = {program.output}' + '\n' + '=' * 30)
+                self.assertEqual(ans, program.output)
 
     def test_harder_arithmetic(self):
         for m, p1 in harder_arithmetic:
@@ -69,6 +127,27 @@ class TestInterpreter(TestCase):
             with self.subTest(msg=m, case=p1, expected=ans):
                 program = Compile(p1)
                 print('=' * 30 + '\n' + f'{p1} = {program.output}' + '\n' + '='*30)
+                self.assertEqual(ans, program.output)
+
+    def test_boolean_simple_and_or_not(self):
+        for m, p1, ans in simple_and_or_not:
+            with self.subTest(msg=m, case=p1, expected=ans):
+                program = Compile(p1)
+                print('=' * 30 + '\n' + f'{p1} = {program.output}' + '\n' + '=' * 30)
+                self.assertEqual(ans, program.output)
+
+    def test_bool_eq_not_eq(self):
+        for m, p1, ans in equal_not_equal:
+            with self.subTest(msg=m, case=p1, expected=ans):
+                program = Compile(p1)
+                print('=' * 30 + '\n' + f'{p1} = {program.output}' + '\n' + '=' * 30)
+                self.assertEqual(ans, program.output)
+
+    def test_bool_simple_comparision(self):
+        for m, p1, ans in comparison:
+            with self.subTest(msg=m, case=p1, expected=ans):
+                program = Compile(p1)
+                print('=' * 30 + '\n' + f'{p1} = {program.output}' + '\n' + '=' * 30)
                 self.assertEqual(ans, program.output)
 
     def test_simple_variable_assignment(self):

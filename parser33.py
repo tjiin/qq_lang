@@ -1,7 +1,6 @@
 from rply import ParserGenerator
 from ast import *
 from lexer import *
-from pprint import pformat
 from pprint import *
 import warnings
 
@@ -14,28 +13,29 @@ pg = ParserGenerator(
      'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE', 'LSQR', 'RSQR', 'COMMA',
      'NEGATIVE', 'PLUS', 'MINUS', 'MUL', 'DIV', 'POW', 'CARET', 'MOD',
      'LET', 'IDENTIFIER', '=', '==', '!=', 'IF', 'AND', 'OR', 'NOT', 'ELSE', 'ELIF',
-     'FUNCTION', 'RETURN', '<', '>', '<=', '>=',
-     'START', 'END', 'NEWLINE', '$end'],
-    # List of precedence rules in ascending order
+     'FUNCTION', 'RETURN', '<', '>', '<=', '>=', 'TRUE', 'FALSE',
+     'NEWLINE', '$end'],
+    # List of precedence rules in ascending ORDER
     precedence=[
+        ('left', ['LPAREN', 'RPAREN']),
         ('left', ['FUNCTION']),
         ('left', ['LET']),
         ('left', ['=']),
         ('left', ['COMMA']),  # fixes 1 shift/reduce, not sure if best location
+        ('left', ['<=', '<', '>', '>=', '!=', '==']),
+        ('left', ['NOT', 'AND', 'OR']),
         ('left', ['FLOAT', 'INTEGER']),
         ('right', ['POW']),
         ('left', ['NEWLINE']),
-        ('left', ['LPAREN', 'RPAREN']),
-        ('left', ['NEGATIVE']),
         ('left', ['PLUS', 'MINUS']),
+        ('left', ['NEGATIVE']),
         ('left', ['MUL', 'DIV']),
-    ],
-    # cache_id='pg_cache1'
+    ]  # cache_id='pg_cache1'
 )
 
 
 @pg.production('main : block')
-def program(state, p):
+def program(self, p):
     return p[0]
 
 
@@ -62,12 +62,13 @@ def statement(state, p):
     return p[0]
 
 
-@pg.production('stmt : function_call')
+@pg.production('statement : function_call')
 def func_call_stmt(state, p):
     return p[0]
 
 
-@pg.production('stmt : function_def')
+@pg.production('statement : function_def')
+@pg.production('statement : function_def NEWLINE')
 def func_def_stmt(state, p):
     return p[0]
 
@@ -80,19 +81,23 @@ def func_call(state, p):
     else:
         return FunctionCall(p[0], p[2])
 
+
+@pg.production('function_def : FUNCTION IDENTIFIER LPAREN arg_list RPAREN LBRACE return RBRACE')
+def func_def_no_body(state, p):
+    return FunctionDef(p[1], args=p[3], return_stmt=p[6])
+
+
 #                                  0        1         2      3       4      5      6     7      8
 # FunctionDef(name, block=None, args=None, return_stmt=None)
 @pg.production('function_def : FUNCTION IDENTIFIER LPAREN arg_list RPAREN LBRACE block return RBRACE')
-@pg.production('function_def : FUNCTION IDENTIFIER LPAREN arg_list RPAREN LBRACE return RBRACE')
 @pg.production('function_def : FUNCTION IDENTIFIER LPAREN arg_list RPAREN LBRACE block RBRACE')
 @pg.production('function_def : FUNCTION IDENTIFIER LPAREN arg_list RPAREN LBRACE stmt RBRACE')
 def func_def(state, p):
     if len(p) == 9:
         return FunctionDef(p[1], p[6], p[3], p[7])
-    elif p[6].getttokentype() == 'return':
-        return FunctionDef(p[1], args=p[3], return_stmt=p[7])
     else:
         return FunctionDef(p[1], block=p[6], args=p[3])  # block or stmt body
+
 
 #                                  0        1         2      3     4      5      6     7
 # FunctionDef(name, block=None, args=None, return_stmt=None)
@@ -129,12 +134,14 @@ def arg_list(state, p):
     return a
 
 
+# @pg.production('return : RETURN LPAREN expr RPAREN')
+@pg.production('return : RETURN expr')
+def return_stmt(state, p):
+    return p[1]
+
+
 @pg.production('stmt : LET IDENTIFIER = expr')
-# @pg.production('stmt : LET IDENTIFIER = expr')
 def assign_id(state, p):
-    if hasattr(p[3], 'left') and hasattr(p[3], 'right'):
-        dprint(p[3].left)
-        dprint(p[3].right)
     return Assignment(p[1], p[3])
 
 
@@ -148,10 +155,9 @@ def expr(state, p):
     return p[0]
 
 
-# @pg.production('return : RETURN LPAREN expr RPAREN')
-@pg.production('return : RETURN expr')
-def return_stmt(state, p):
-    return p[1]
+@pg.production('expr : NEGATIVE expr')
+def neg_expr(state, p):
+    return FlipSign(p[1])
 
 
 @pg.production('expr : IDENTIFIER')
@@ -160,8 +166,17 @@ def eval_id(state, p):
 
 
 @pg.production('expr : number')
-def eval_base(state, p):
+def eval_num(state, p):
     return p[0]
+
+
+@pg.production('expr : TRUE')
+@pg.production('expr : FALSE')
+def bool_literals(state, p):
+    if p[0].gettokentype() == 'TRUE':
+        return TrueT
+    else:
+        return FalseT
 
 
 @pg.production('expr : LPAREN expr RPAREN')
@@ -169,31 +184,55 @@ def paren_expr(state, p):
     return p[1]
 
 
-@pg.production('number : NEGATIVE FLOAT')
-@pg.production('number : NEGATIVE INTEGER')
+@pg.production('expr : expr <= expr')
+@pg.production('expr : expr < expr')
+@pg.production('expr : expr > expr')
+@pg.production('expr : expr >= expr')
+def size_comparison_ops(state, p):
+    left = p[0]
+    right = p[2]
+    t = p[1].gettokentype()
+    if t == '<=':
+        return LessThanEq(left, right)
+    elif t == '<':
+        return LessThan(left, right)
+    elif t == '>':
+        return GreaterThan(left, right)
+    elif t == '>=':
+        return GreaterThanEq(left, right)
+    else:
+        raise ValueError('This should not happen!')
+
+
+@pg.production('expr : expr != expr')
+@pg.production('expr : expr == expr')
+def equivalence_ops(state, p):
+    if p[1].gettokentype() == '!=':
+        return NotEqual(p[0], p[2])
+    else:
+        return EqualTo(p[0], p[2])
+
+
+@pg.production('expr : NOT expr')
+@pg.production('expr : expr AND expr')
+@pg.production('expr : expr OR expr')
+def boolean_ops(state, p):
+    if len(p) == 2:
+        return Not(p[1])
+    elif p[1].gettokentype() == 'AND':
+        return And(p[0], p[2])
+    else:
+        return Or(p[0], p[2])
+
+
 @pg.production('number : FLOAT')
 @pg.production('number : INTEGER')
 def eval_number(state, p):
-    if p[0].gettokentype() == 'FLOAT':
+    t0 = p[0].gettokentype()
+    if t0 == 'FLOAT':
         return Float(float(p[0].getstr()))
-    elif p[0].gettokentype() == 'INTEGER':
+    elif t0 == 'INTEGER':
         return Integer(int(p[0].getstr()))
-    elif p[0].gettokentype() == 'NEGATIVE' and p[1].gettokentype() == 'FLOAT':
-        return Float(-1 * float(p[1].getstr()))
-    elif p[0].gettokentype() == 'NEGATIVE' and p[1].gettokentype() == 'INTEGER':
-        return Integer(-1 * int(p[1].getstr()))
-    else:
-        ValueError('This should not happen!')
-
-
-@pg.production('expr : NEGATIVE NEGATIVE expr')
-def double_negative(state, p):
-    return p[2]
-
-
-@pg.production('expr : NEGATIVE LPAREN expr RPAREN')
-def negative_paren_expr(state, p):
-    return FlipSign(p[2])
 
 
 @pg.production('expr : expr POW expr')
@@ -201,18 +240,19 @@ def negative_paren_expr(state, p):
 @pg.production('expr : expr MINUS expr')
 @pg.production('expr : expr MUL expr')
 @pg.production('expr : expr DIV expr')
-def binop_num_expr(state, p):
+def binary_op_expr(state, p):
     left = p[0]
     right = p[2]
-    if p[1].gettokentype() == 'PLUS':
+    t = p[1].gettokentype()
+    if t == 'PLUS':
         return Add(left, right)
-    elif p[1].gettokentype() == 'MINUS':
+    elif t == 'MINUS':
         return Sub(left, right)
-    elif p[1].gettokentype() == 'MUL':
+    elif t == 'MUL':
         return Mul(left, right)
-    elif p[1].gettokentype() == 'DIV':
+    elif t == 'DIV':
         return Div(left, right)
-    elif p[1].gettokentype() == 'POW':
+    elif t == 'POW':
         return Pow(left, right)
     else:
         raise AssertionError('This should not happen!')
@@ -226,30 +266,28 @@ def implicit_mul_num_pow(state, p):
 
 # EVEN PYTHON DOESN'T EVALUATE THIS ("int or float object is not callable")
 @pg.production('expr : number LPAREN expr RPAREN', precedence='MUL')
-def implicit_mul_num_parens(state, p):
+def implicit_mul_num_par(state, p):
     return Mul(p[0], p[2])
 
 
 # EVEN PYTHON DOESN'T EVALUATE THIS ("int or float object is not callable")
 @pg.production('expr : LPAREN expr RPAREN number', precedence='MUL')
-def implicit_mul_parens_num(state, p):
+def implicit_mul_par_num(state, p):
     return Mul(p[1], p[3])
 
 
 # EVEN PYTHON DOESN'T EVALUATE THIS ("int or float object is not callable")
 @pg.production('expr : LPAREN expr RPAREN LPAREN expr RPAREN', precedence='MUL')
-def implicit_mul_parens_parens(state, p):
+def implicit_mul_par_par(state, p):
     return Mul(p[1], p[4])
 
 
 @pg.error
 def error_handler(state, token):
-    print('\n--Parsing Error--')
+    print('\n---Parsing Error---')
     print(token.getsourcepos())
     print(token)
-    print(f'state : {state}')
-    print('\n')
-
+    print(f'state : {state}\n')
     raise ValueError("Ran into a %s where it wasn't expected" % token.gettokentype())
 
 
@@ -269,11 +307,10 @@ class Compile:  # yes I know, this name should be in scare quotes..
         else:
             self.namespace = space
         self.tokens = [t for t in lexer.lex(code)]
-        # pprint(self.tokens)
+        pprint(self.tokens)
         self.parser_output = parse(code, self.namespace)
         self.output = self.parser_output.eval(self.namespace)
 
-    # Default print is the eval output
     def __str__(self):
         return str(self.output)
 
@@ -291,7 +328,7 @@ class Compile:  # yes I know, this name should be in scare quotes..
         a = '=' * 80
         b = '-' * 80
         fmt_str = f"{{: <{space}}} {{: <{space}}}"  # "{{" to escape curly brace, equivalent to e.g. "{: <15} {: <15}"
-        print('\n'+a)
+        print('\n' + a)
         for i, row in enumerate(rows):
             print(fmt_str.format(*row))
             print(b) if i != len(rows) - 1 else print(a)

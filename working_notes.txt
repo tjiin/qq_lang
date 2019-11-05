@@ -178,7 +178,28 @@ evaluating a function object --> ... ?
 	   }
 
 
-- ** function with multiple return statements **
+- ** function with multiple return statements ** ...
 
 - function block can be just a statement
 	- i.e. no new line --> "function test(a) { a = a * 10 return(a) }""
+		- right now we need newline the way block and return are parsed
+
+
+- booleans expressions
+	- order of operations (python):
+		- in, not in, is, is not, <, <=,  >,  >=, <>, !=, ==
+		- not x
+		- and
+		- or
+
+	- <> ?
+
+- we only have floats and ints as datatypes..
+
+- statement : stmt ; stmt ?
+- if 'f' in 'foo': print('1'); print('2'); print('3') ?
+
+
+- expr -> NEGATIVE NEGATIVE expr
+- expr -> NEGATIVE expr
+	- caused 18 reduce/reduce conflicts, good example
