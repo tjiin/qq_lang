@@ -203,3 +203,13 @@ evaluating a function object --> ... ?
 - expr -> NEGATIVE NEGATIVE expr
 - expr -> NEGATIVE expr
 	- caused 18 reduce/reduce conflicts, good example
+
+===========
+
+- if statements
+	- we haven't done any control flow yet
+
+
+- what is something impressive the language can do at this point?
+	- can we define a function in a function?
+	- well first, can we even call a function in another one?

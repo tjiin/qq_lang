@@ -9,7 +9,7 @@ import warnings
 
 pg = ParserGenerator(
     # List of all token names accepted by the parser
-    ['INTEGER', 'FLOAT', 'STRING', 'BOOL',
+    ['INTEGER', 'FLOAT', 'STRING', 'BOOL', 'SEMICOLON',
      'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE', 'LSQR', 'RSQR', 'COMMA',
      'NEGATIVE', 'PLUS', 'MINUS', 'MUL', 'DIV', 'POW', 'CARET', 'MOD',
      'LET', 'IDENTIFIER', '=', '==', '!=', 'IF', 'AND', 'OR', 'NOT', 'ELSE', 'ELIF',
@@ -20,6 +20,7 @@ pg = ParserGenerator(
         ('left', ['LPAREN', 'RPAREN']),
         ('left', ['FUNCTION']),
         ('left', ['LET']),
+        ('left', ['IDENTIFIER']),
         ('left', ['=']),
         ('left', ['COMMA']),  # fixes 1 shift/reduce, not sure if best location
         ('left', ['<=', '<', '>', '>=', '!=', '==']),
@@ -48,27 +49,25 @@ def main_block(state, p):
 @pg.production('block : statement block')
 def block_statement(state, p):
     print('block : statement block')
-    if type(p[1]) is Block:
-        b = p[1]
-    else:
-        b = Block(p[1])
+    b = p[1] if type(p[1]) is Block else Block(p[1])
     b.add_statement(p[0])
     return b
 
 
-@pg.production('statement : stmt NEWLINE')
 @pg.production('statement : stmt $end')
+@pg.production('statement : stmt NEWLINE')
+@pg.production('statement : stmt SEMICOLON')
 def statement(state, p):
     return p[0]
 
 
-@pg.production('statement : function_call')
+@pg.production('stmt : function_call')
 def func_call_stmt(state, p):
     return p[0]
 
 
-@pg.production('statement : function_def')
-@pg.production('statement : function_def NEWLINE')
+@pg.production('stmt : function_def')
+# @pg.production('stmt : function_def NEWLINE')
 def func_def_stmt(state, p):
     return p[0]
 
@@ -91,7 +90,7 @@ def func_def_no_body(state, p):
 # FunctionDef(name, block=None, args=None, return_stmt=None)
 @pg.production('function_def : FUNCTION IDENTIFIER LPAREN arg_list RPAREN LBRACE block return RBRACE')
 @pg.production('function_def : FUNCTION IDENTIFIER LPAREN arg_list RPAREN LBRACE block RBRACE')
-@pg.production('function_def : FUNCTION IDENTIFIER LPAREN arg_list RPAREN LBRACE stmt RBRACE')
+@pg.production('function_def : FUNCTION IDENTIFIER LPAREN arg_list RPAREN LBRACE statement RBRACE')
 def func_def(state, p):
     if len(p) == 9:
         return FunctionDef(p[1], p[6], p[3], p[7])
@@ -103,7 +102,7 @@ def func_def(state, p):
 # FunctionDef(name, block=None, args=None, return_stmt=None)
 @pg.production('function_def : FUNCTION IDENTIFIER LPAREN RPAREN LBRACE block return RBRACE')
 @pg.production('function_def : FUNCTION IDENTIFIER LPAREN RPAREN LBRACE block RBRACE')
-@pg.production('function_def : FUNCTION IDENTIFIER LPAREN RPAREN LBRACE stmt RBRACE')
+@pg.production('function_def : FUNCTION IDENTIFIER LPAREN RPAREN LBRACE statement RBRACE')
 def func_def_no_args(state, p):
     if len(p) == 8:
         return FunctionDef(p[1], block=p[5], return_stmt=p[6])

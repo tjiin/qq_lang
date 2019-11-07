@@ -1,4 +1,4 @@
-from lexer import lexer, dprint
+from lexer import lexer
 from parser33 import parser
 import ast
 import sys
@@ -25,8 +25,6 @@ def main():
 				for t in lexer.lex(code): 
 					print(t)
 			print('\n')
-		print(f'data_dict = {ast.data_dict}')
-		# print(f'line_count = {line_count}')
 
 
 if __name__ == '__main__':

@@ -1,3 +1,11 @@
 - homoiconicity, lisp
 - statically typed and immutable by default but can declare variables that aren't?
 - middle ground between hard functional programming languages like haskell and javascript or python?
+
+- statement : stmt ; stmt ; stmt (?)
+--> if 'f' in 'foo': print('1'); print('2'); print('3')
+
+- conditionals/ternary operator
+
+- comprehensions/generators
+- referring to object as you're creating it

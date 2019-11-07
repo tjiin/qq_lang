@@ -23,12 +23,28 @@ from pprint import *
 # code1 = '-10*-9'
 # code1 = '----(3)'
 
-code1 = 'let x = -1 \\n (--x)*2'
-code1 = 'let x = -1 \\n --x '
+'''code1 = """
+        function parent(a){
+            a = a * 10
+            function child(b){
+                b = b + 1
+                return(b)
+            }
+        return(a + child(a))
+        }
+        """'''
+
+code1 = "function test(a){ return(a+1) } ; function parent(b){ let c = b + test(b) \\n return(c) } ; parent(2)"
+# code1 = "function test(a){ return(a+1) } ; test(10) ; 1+1 ; 5 > -5"
+# code3 = "parent(2)"
 
 program = Compile(code1)
 space = program.namespace
+"""program.print_full()
+program = Compile(code2, space=space)
 program.print_full()
+program = Compile(code3, space=space)
+program.print_full()"""
 
 
 """print('-'*50)

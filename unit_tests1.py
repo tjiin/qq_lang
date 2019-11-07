@@ -10,7 +10,9 @@ compound_negatives = [
     ('double neg', '--2', 2), ('trip neg', '---2', -2), ('quad neg', '----2', 2),
     ('nested trip neg', '-(--(2))', -2), ('sub nested neg', '2--(-2)', 0),
     ('new line single neg var', 'let x = -1 \\n -x*2', [None, 2]),
-    ('new line double neg var', 'let x = -1 \\n --x*2', -2)]
+    ('new line double neg var', 'let x = -1 \\n (--x)*2', [None, -2]),
+    ('new line double neg var', 'let x = -1 \\n --x*2', [None, 2])
+]
 
 harder_arithmetic = [
     ('add sub 3 float', '2.5 - 99.65 + 0.001'), ('mul div 3 float', '2.5 * 99.65 / 0.001'),
@@ -92,11 +94,11 @@ multi_line_vars = [
 
 basic_functions = [
     ('func no arg no body return', r'function f(){ return(1+1) } \n f()', [None, 2]),
-    ('1 line func no arg no body return', r'function f(){ return(1+1) } f()', [None, 2]),
+    ('1 line func no arg no body return', r'function f(){ return(1+1) } ; f()', [None, 2]),
     ('func no arg return', r'function f(){ let x = 10.5 \n return(x*2) } \n f()', [None, 21]),
     ('func no body return', r'function f(a,b){ return((b/-3)+a*2) } \n f(10,6)', [None, 18]),
-    ('1 line func arg body return', r'function f(a,b){ return((b/-3)+a*2) } f(10,6)', [None, 18]),
-    ('1 line func no-body return', r'function f(a,b){ return((b/-3)+a*2) } f(10,6)', [None, 18])
+    ('1 line func arg body return', r'function f(a,b){ return((b/-3)+a*2) } ; f(10,6)', [None, 18]),
+    ('1 line func no-body return', r'function f(a,b){ return((b/-3)+a*2) } \n f(10,6)', [None, 18])
 ]
 
 
