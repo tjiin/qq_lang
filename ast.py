@@ -29,6 +29,11 @@ class NameSpace:
     def items(self):
         return [x for x in self.space.items()]
 
+    def add_items(self, items):
+        # items is a list of key,val tuples, not checking if keys are unique
+        for k, v in items:
+            self.space[k] = v
+
 
 class Block(Node):
     def __init__(self, statement):
@@ -38,87 +43,72 @@ class Block(Node):
         self.statements.append(statement)
 
     def eval(self, space):
-        print(f'\n*** Block eval() : {self.statements}')
+        print(f'\n--- Block.eval() : {list(reversed(self.statements))}')
         results = []
         for i, s in enumerate(reversed(self.statements)):
-            if s is not None:  # Fix all these Nones later?
+            if s is not None:
                 r = s.eval(space)
                 if hasattr(s, 'name'):
-                    print(f'-- line index : {i} | statement : {s.name} | result = {r}')
+                    print(f'-line {i}  |  {s.name}  |  result = {r}')
                 else:
-                    print(f'-- line index : {i} | statement : {s} | result = {r}')
+                    print(f'-line {i}  |  {s}  |  result = {r}')
                 results.append(r)
-        if len(results) == 1: results = results[0]
-        print(f'-- Block eval() = {results}')
+        results = results[0] if len(results) == 1 else results
+        print(f'--- Block.eval() output = {results}\n')
         return results
 
 
 class FunctionCall(Node):
-    def __init__(self, name, args=None):
-        if hasattr(name, 'gettokentype'):
-            name = name.value
-        self.name = name
-        if args is not None:
-            self.args = args.get_value()  # type ArgList
-        else:
-            self.args = args  # None
-        print(f'FunctionCall.init() : self.args = {self.args}')
+    def __init__(self, name, arg_list=None):
+        self.name = name.value
         self.parent_space = None
+        self.args = arg_list.args if arg_list is not None else None
+        print(f'FunctionCall.init() of "{self.name}" : self.args = {arg_list.get_str() if self.args is not None else None}')
 
     def eval(self, space):
-        print(f'FunctionCall : name = {self.name}')
-        print(f'FunctionCall : args = {self.args}')
-
+        print(f"FunctionCall : name, args = '{self.name}', {self.args}")
         if type(space) != NameSpace:
             raise Exception(f"FunctionCall Error: space is not type NameSpace in {self.name}")
-
+        elif self.name not in space:
+            raise Exception(f"NameSpace Error: function '{self.name}' is undefined in '{self.parent_space}'")
         self.parent_space = space
-
-        if self.name not in self.parent_space:
-            raise Exception(f"NameSpace Error: function '{self.name}' is Undefined in '{self.parent_space}'")
-
         namespace_id = f'{self.name}{self.parent_space.name}({id(self)})'
         func_space = NameSpace(namespace_id)
         func_def = self.parent_space[self.name]
-
-        if func_def.args is not None:
-            # not checking if len args is correct for now
-            # this is the evaluated list of arguments passed to the function
+        if func_def.params is not None:
+            if len(func_def.params) != len(self.args):
+                raise Exception(f"FunctionCall Error: '{self.name}' expected {len(func_def.params)} arguments"
+                                f"but got {len(self.args)}")
+            # evaluate arguments passed to the function
             arg_values = [arg.eval(self.parent_space) for arg in self.args]
+            print(f'FunctionCall evaluated args = {arg_values}')
+            # set parameters from function definition to evaluated argument values (in new namespace)
+            func_space.add_items(zip(func_def.params, arg_values))
 
-            print(f'FunctionCall evaluated arg_values = {arg_values}')
-
-            for i, arg in enumerate(func_def.args):
-                func_space[arg.name] = arg_values[i]  # add macro method to NameSpace maybe
-
-        print(f"FunctionCall '{self.name}' before eval : {func_space}")
-
-        if func_def.block is not None:
-            print(func_def.block)
-            func_output = func_def.block.eval(func_space)
-            print(f"Final NameSpace of function '{self.name}' : {func_space}")
-
+        print(f"FunctionCall '{self.name}' space before eval : {func_space}")
+        func_output = None
+        if func_def.body is not None:
+            func_output = func_def.body.eval(func_space)
+            print(f"FunctionCall.eval() '{self.name}' space after block eval : {func_space}")
         if func_def.return_stmt is not None:
-            # variable changes from block should be be reflected in func_space
-            print(f"Return stmt of function '{self.name}' : {func_def.return_stmt}")
+            print(f"Return stmt of '{self.name}' : {func_def.return_stmt}")
             return_value = func_def.return_stmt.eval(func_space)
-            print(f"Return value of function '{self.name}' in '{self.parent_space}' : {return_value}")
+            print(f"Return value of '{self.name}' in '{self.parent_space}' : {return_value}")
             return return_value
-        elif func_def.block is not None:
-            print(f"Line outputs of function '{self.name}' in '{self.parent_space}' : {func_output}")
-            return True
-        else:
+        elif func_def.body is not None:  # no return but body, print line outputs for debug and return true
+            print(f"Line outputs '{self.name}' in '{self.parent_space}' : {func_output}")
             return True
 
 
-# block, args and return_stmt can each be None but at least block OR return are needed
+# body, param_list and return_stmt can each be None but at least body OR return are needed
 class FunctionDef(Node):
-    def __init__(self, name, block=None, args=None, return_stmt=None):
+    def __init__(self, name, body=None, param_list=None, return_stmt=None):
+        if body == return_stmt == param_list is None:
+            raise ValueError('FunctionDef needs at least body or return')
         self.name = name.value
-        self.block = block
-        # args should always be either one or a list of string variable names
-        self.args = args.get_value() if args is not None else args
-        print(f'FunctionDef.init() self.args = {self.args}')
+        self.body = body
+        self.params = param_list.params if param_list is not None else None
+        print(f'FunctionDef.init() self.params = {self.params}')
         self.return_stmt = return_stmt
         self.space = None
 
@@ -127,30 +117,46 @@ class FunctionDef(Node):
         space[self.name] = self
 
 
+class ParamList(Node):
+    def __init__(self, param):
+        self.params = [param.value]
+        print(f'ParamList.init() self.params = {self.params}')
+
+    def append_param(self, param):
+        if param.value in self.params:
+            raise ValueError(f'Duplicate parameter {param.value} in ParamList.append_param()')
+        self.params.append(param.value)
+
+    def eval(self, space):
+        return self.params
+
+    def __len__(self):
+        return len(self.params)
+
+
 class ArgList(Node):
     def __init__(self, arg):
-        self.args = [arg]
-        print(f'ArgList.init() self.args = {self.args}')
+        self.args = [arg]  # no name or value used here as they can be expr that need eval
+        print(f'ArgList.init() self.args = {self.get_str()}')
 
-    def add_arg(self, arg):
+    def append_arg(self, arg):
         self.args.append(arg)
 
-    def eval(self, space, caller):
-        results = []
-        for i, a in enumerate(reversed(self.args)):
-            if type(caller) is FunctionCall:
-                val = a.eval(space) if not hasattr(a, 'value') else a.value
-            elif type(caller) is FunctionDef:
-                val = a.name
-            else:
-                raise ValueError(f'Unknown caller type in ArgList.eval(): {type(caller)}')
-            results.append(val)
-        if len(results) == 1 and type(caller) is FunctionCall:
-            results = results[0]
-        return results
+    def eval(self, space):
+        # not used in FunctionCall eval
+        arg_values = [a.eval(space) if not hasattr(a, 'value') else a.value for a in self.args]
+        return arg_values
 
-    def get_value(self):
-        return self.args
+    def get_str(self):
+        result = []
+        for a in self.args:
+            if hasattr(a, 'value'): result.append(a.value)
+            elif hasattr(a, 'name'): result.append(a.name)
+            else: result.append(a)
+        return str(result)
+
+    def __len__(self):
+        return len(self.args)
 
 
 class Identifier(Node):
@@ -166,16 +172,11 @@ class Identifier(Node):
 
 class Variable(Node):
     def __init__(self, name):
-        if hasattr(name, 'gettokentype'):
-            name = name.value
+        if hasattr(name, 'gettokentype'): name = name.value
         self.name = name
-        self.value = None
-        # print(f"- in Variable init self.name = '{self.name}'")
 
     def eval(self, space):
-        # print(f"- in Variable.eval() self.name = '{self.name}'")
         if self.name not in space:
-            # print(space.items())
             raise Exception(f"NameSpace Error: Variable '{self.name}' undefined in '{space.name}'")
         return space[self.name]  # .eval() ?
 
@@ -183,29 +184,20 @@ class Variable(Node):
 class Assignment(Node):
     def __init__(self, name, expr):
         print(f'Assignment.init() : name = {name.value} | expr = {expr}')
-        self.value = None
         self.name = name.value
         self.expr = expr
-        # self.var = Variable(name)
 
     def eval(self, space):
-        if self.name not in space:
-            var = Variable(self.name)
-        else:
+        if self.name in space:
             print(f'Assignment.eval() : Variable {self.name} already defined = {space[self.name]}')
-            var = space[self.name]
         expr = self.expr
-        if not hasattr(expr, 'value'):
-            print(f'Assignment.eval() : "{self.name}" = "{expr}"')
-            print('-- Need to eval assignment expr')
-            result = expr.eval(space)
+        if not hasattr(self.expr, 'value'):  # not a constant
+            result = self.expr.eval(space)
         else:
-            print(f'Assignment.eval() : "{self.name}" = "{expr.value}"')
-            result = expr.value
-            if type(result) is str and expr.name == 'INTEGER':
-                result = int(result)
-            elif type(result) is str and expr.name == 'FLOAT':
-                result = float(result)
+            result = self.expr.value
+            if type(result) is str and self.expr.name == 'INTEGER': result = int(result)
+            elif type(result) is str and self.expr.name == 'FLOAT': result = float(result)
+        print(f'Assignment.eval() : "{self.name}" = {self.expr} = "{result}"')
         space[self.name] = result
 
 
@@ -297,7 +289,7 @@ class Or(BinaryOp):
 
 class Add(BinaryOp):
     def eval(self, space):
-        # print(self.left, self.right.eval())
+        # print(f'Add.eval() left,right = {self.left, self.right}')
         # result = self.left.eval(space) + self.right.eval(space)
         # print( f'Add({self.left.eval()}, {self.right.eval()}) = {result}' )
         return self.left.eval(space) + self.right.eval(space)
@@ -312,7 +304,7 @@ class Sub(BinaryOp):
 
 class Mul(BinaryOp):
     def eval(self, space):
-        print( self.left.eval(space), self.right.eval(space) )
+        # print( self.left.eval(space), self.right.eval(space) )
         return self.left.eval(space) * self.right.eval(space)
 
 

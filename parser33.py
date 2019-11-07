@@ -3,34 +3,30 @@ from ast import *
 from lexer import *
 from pprint import *
 import warnings
-
 # warnings.filterwarnings('ignore')
 
 
 pg = ParserGenerator(
     # List of all token names accepted by the parser
-    ['INTEGER', 'FLOAT', 'STRING', 'BOOL', 'SEMICOLON',
-     'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE', 'LSQR', 'RSQR', 'COMMA',
-     'NEGATIVE', 'PLUS', 'MINUS', 'MUL', 'DIV', 'POW', 'CARET', 'MOD',
-     'LET', 'IDENTIFIER', '=', '==', '!=', 'IF', 'AND', 'OR', 'NOT', 'ELSE', 'ELIF',
-     'FUNCTION', 'RETURN', '<', '>', '<=', '>=', 'TRUE', 'FALSE',
+    # 'STRING', 'BOOL', 'LSQR', 'RSQR', 'CARET', 'MOD', 'IF', 'ELSE', 'ELIF',
+    ['INTEGER', 'FLOAT', 'SEMICOLON', 'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE',  'COMMA',
+     'NEGATIVE', 'PLUS', 'MINUS', 'MUL', 'DIV', 'POW', 'LET', 'IDENTIFIER', '=', '==', '!=',
+     'AND', 'OR', 'NOT', 'FUNCTION', 'RETURN', '<', '>', '<=', '>=', 'TRUE', 'FALSE',
      'NEWLINE', '$end'],
     # List of precedence rules in ascending ORDER
     precedence=[
-        ('left', ['LPAREN', 'RPAREN']),
         ('left', ['FUNCTION']),
-        ('left', ['LET']),
         ('left', ['IDENTIFIER']),
         ('left', ['=']),
-        ('left', ['COMMA']),  # fixes 1 shift/reduce, not sure if best location
-        ('left', ['<=', '<', '>', '>=', '!=', '==']),
-        ('left', ['NOT', 'AND', 'OR']),
+        ('left', ['OR']),
+        ('left', ['AND']),
+        ('left', ['NOT']),
+        ('left', ['<', '<=', '>', '>=', '!=', '==']),
         ('left', ['FLOAT', 'INTEGER']),
-        ('right', ['POW']),
-        ('left', ['NEWLINE']),
         ('left', ['PLUS', 'MINUS']),
         ('left', ['NEGATIVE']),
         ('left', ['MUL', 'DIV']),
+        ('right', ['POW']),
     ]  # cache_id='pg_cache1'
 )
 
@@ -48,7 +44,6 @@ def main_block(state, p):
 
 @pg.production('block : statement block')
 def block_statement(state, p):
-    print('block : statement block')
     b = p[1] if type(p[1]) is Block else Block(p[1])
     b.add_statement(p[0])
     return b
@@ -61,19 +56,41 @@ def statement(state, p):
     return p[0]
 
 
-@pg.production('stmt : function_call')
-def func_call_stmt(state, p):
-    return p[0]
+# FunctionDef - params but no block
+@pg.production('stmt : FUNCTION IDENTIFIER LPAREN param_list RPAREN LBRACE return RBRACE')
+def func_def_no_body(state, p):
+    return FunctionDef(p[1], body=None, param_list=p[3], return_stmt=p[6])
 
 
-@pg.production('stmt : function_def')
-# @pg.production('stmt : function_def NEWLINE')
-def func_def_stmt(state, p):
-    return p[0]
+# FunctionDef - args       0        1         2       3      4      5      6     7      8
+@pg.production('stmt : FUNCTION IDENTIFIER LPAREN param_list RPAREN LBRACE block return RBRACE')
+@pg.production('stmt : FUNCTION IDENTIFIER LPAREN param_list RPAREN LBRACE block RBRACE')
+def func_def(state, p):
+    if len(p) == 9:
+        return FunctionDef(p[1], p[6], p[3], p[7])
+    else:
+        return FunctionDef(p[1], p[6], p[3], return_stmt=None)
 
 
-@pg.production('function_call : IDENTIFIER LPAREN RPAREN')
-@pg.production('function_call : IDENTIFIER LPAREN arg_list RPAREN')
+# FunctionDef - no args but block    1         2     3      4      5     6      7
+@pg.production('stmt : FUNCTION IDENTIFIER LPAREN RPAREN LBRACE block return RBRACE')
+@pg.production('stmt : FUNCTION IDENTIFIER LPAREN RPAREN LBRACE block RBRACE')
+def func_def_no_args(state, p):
+    if len(p) == 8:
+        return FunctionDef(p[1], body=p[5], param_list=None, return_stmt=p[6])
+    else:
+        return FunctionDef(p[1], body=p[5])
+
+
+# FunctionDef - no args or block
+@pg.production('stmt : FUNCTION IDENTIFIER LPAREN RPAREN LBRACE return RBRACE')
+def func_def_no_arg_no_block(state, p):
+    return FunctionDef(p[1], return_stmt=p[5])
+
+
+# FunctionCall
+@pg.production('func_call : IDENTIFIER LPAREN RPAREN')
+@pg.production('func_call : IDENTIFIER LPAREN arg_list RPAREN')
 def func_call(state, p):
     if len(p) == 3:
         return FunctionCall(p[0])
@@ -81,41 +98,22 @@ def func_call(state, p):
         return FunctionCall(p[0], p[2])
 
 
-@pg.production('function_def : FUNCTION IDENTIFIER LPAREN arg_list RPAREN LBRACE return RBRACE')
-def func_def_no_body(state, p):
-    return FunctionDef(p[1], args=p[3], return_stmt=p[6])
+@pg.production('param_list : IDENTIFIER')
+def single_param(state, p):
+    a = ParamList(p[0])
+    return a
 
 
-#                                  0        1         2      3       4      5      6     7      8
-# FunctionDef(name, block=None, args=None, return_stmt=None)
-@pg.production('function_def : FUNCTION IDENTIFIER LPAREN arg_list RPAREN LBRACE block return RBRACE')
-@pg.production('function_def : FUNCTION IDENTIFIER LPAREN arg_list RPAREN LBRACE block RBRACE')
-@pg.production('function_def : FUNCTION IDENTIFIER LPAREN arg_list RPAREN LBRACE statement RBRACE')
-def func_def(state, p):
-    if len(p) == 9:
-        return FunctionDef(p[1], p[6], p[3], p[7])
+@pg.production('param_list : IDENTIFIER COMMA param_list')
+def param_list(state, p):
+    if type(p[2]) is ParamList:
+        a = p[2]
     else:
-        return FunctionDef(p[1], block=p[6], args=p[3])  # block or stmt body
+        a = ParamList(p[2])
+    a.append_param(p[0])
+    return a
 
 
-#                                  0        1         2      3     4      5      6     7
-# FunctionDef(name, block=None, args=None, return_stmt=None)
-@pg.production('function_def : FUNCTION IDENTIFIER LPAREN RPAREN LBRACE block return RBRACE')
-@pg.production('function_def : FUNCTION IDENTIFIER LPAREN RPAREN LBRACE block RBRACE')
-@pg.production('function_def : FUNCTION IDENTIFIER LPAREN RPAREN LBRACE statement RBRACE')
-def func_def_no_args(state, p):
-    if len(p) == 8:
-        return FunctionDef(p[1], block=p[5], return_stmt=p[6])
-    else:
-        return FunctionDef(p[1], block=p[5])  # block or stmt body
-
-
-@pg.production('function_def : FUNCTION IDENTIFIER LPAREN RPAREN LBRACE return RBRACE')
-def func_def_no_arg_no_block(state, p):
-    return FunctionDef(p[1], return_stmt=p[5])
-
-
-# @pg.production('arg_list : IDENTIFIER')
 @pg.production('arg_list : expr')
 def single_arg(state, p):
     a = ArgList(p[0])
@@ -123,17 +121,15 @@ def single_arg(state, p):
 
 
 @pg.production('arg_list : expr COMMA arg_list')
-# @pg.production('arg_list : IDENTIFIER COMMA arg_list')
 def arg_list(state, p):
     if type(p[2]) is ArgList:
         a = p[2]
     else:
         a = ArgList(p[2])
-    a.add_arg(p[0])
+    a.append_arg(p[0])
     return a
 
 
-# @pg.production('return : RETURN LPAREN expr RPAREN')
 @pg.production('return : RETURN expr')
 def return_stmt(state, p):
     return p[1]
@@ -154,6 +150,11 @@ def expr(state, p):
     return p[0]
 
 
+@pg.production('expr : func_call')
+def expr_func_call(state, p):
+    return p[0]
+
+
 @pg.production('expr : NEGATIVE expr')
 def neg_expr(state, p):
     return FlipSign(p[1])
@@ -164,18 +165,38 @@ def eval_id(state, p):
     return Variable(p[0])
 
 
-@pg.production('expr : number')
-def eval_num(state, p):
+@pg.production('expr : constant')
+@pg.production('constant : number')
+@pg.production('constant : bool_const')
+def constant(state, p):
     return p[0]
 
 
-@pg.production('expr : TRUE')
-@pg.production('expr : FALSE')
-def bool_literals(state, p):
-    if p[0].gettokentype() == 'TRUE':
-        return TrueT
+@pg.production('expr : expr != expr')
+@pg.production('expr : expr == expr')
+def equivalence_ops(state, p):
+    if p[1].gettokentype() == '!=':
+        return NotEqual(p[0], p[2])
     else:
-        return FalseT
+        return EqualTo(p[0], p[2])
+
+
+@pg.production('expr : NOT expr')
+@pg.production('expr : expr AND expr')
+@pg.production('expr : expr OR expr')
+def boolean_ops(state, p):
+    if len(p) == 2:
+        return Not(p[1])
+    elif p[1].gettokentype() == 'AND':
+        return And(p[0], p[2])
+    else:
+        return Or(p[0], p[2])
+
+
+@pg.production('bool_const : TRUE')
+@pg.production('bool_const : FALSE')
+def bool_literals(state, p):
+    return TrueT if p[0].gettokentype() == 'TRUE' else FalseT
 
 
 @pg.production('expr : LPAREN expr RPAREN')
@@ -201,27 +222,6 @@ def size_comparison_ops(state, p):
         return GreaterThanEq(left, right)
     else:
         raise ValueError('This should not happen!')
-
-
-@pg.production('expr : expr != expr')
-@pg.production('expr : expr == expr')
-def equivalence_ops(state, p):
-    if p[1].gettokentype() == '!=':
-        return NotEqual(p[0], p[2])
-    else:
-        return EqualTo(p[0], p[2])
-
-
-@pg.production('expr : NOT expr')
-@pg.production('expr : expr AND expr')
-@pg.production('expr : expr OR expr')
-def boolean_ops(state, p):
-    if len(p) == 2:
-        return Not(p[1])
-    elif p[1].gettokentype() == 'AND':
-        return And(p[0], p[2])
-    else:
-        return Or(p[0], p[2])
 
 
 @pg.production('number : FLOAT')

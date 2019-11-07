@@ -178,7 +178,11 @@ evaluating a function object --> ... ?
 	   }
 
 
+
+
 - ** function with multiple return statements ** ...
+
+
 
 - function block can be just a statement
 	- i.e. no new line --> "function test(a) { a = a * 10 return(a) }""
@@ -187,7 +191,7 @@ evaluating a function object --> ... ?
 
 - booleans expressions
 	- order of operations (python):
-		- in, not in, is, is not, <, <=,  >,  >=, <>, !=, ==
+		- in, not in, is, is not, <, <=,  >,  >=, <>, != ,==
 		- not x
 		- and
 		- or
@@ -213,3 +217,79 @@ evaluating a function object --> ... ?
 - what is something impressive the language can do at this point?
 	- can we define a function in a function?
 	- well first, can we even call a function in another one?
+
+
+-  "test() + 1"  and  "1 + test()" don't work right now
+	- either unexpected plus or unexpected lparen
+	- function calls aren't an expr and we've only defined expr + expr
+
+
+@pg.production('stmt : function_call')
+def func_call_stmt(state, p):
+    return p[0]
+
+@pg.production('stmt : function_def')
+def func_def_stmt(state, p):
+    return p[0]
+
+    - this isn't doing anything...
+    - just do stmt -> what you have for function call/def
+
+- any noterminal -> nonterminal with return p[0] is unecessary (?)
+	- no.. e.g.  stmt -> expr
+
+-----
+
+- nested function calls
+	- f(g())
+		- arg_list : func_call
+				   | expr
+
+- how do we get expressions of functions to evaluate?
+	- like "f() + 1" or "f(g) == True"
+	- func_expr : func_call
+				| LPAREN func_call RPAREN
+
+		- maybe we can do this in stmt
+
+	- func_expr : func_def expr
+				| expr func_def
+
+				- won't work.. add is defined as expr PLUS expr, PLUS would be unexpected token
+
+- we have to eval the func_call and continue parsing the result followed by PLUS EXPR
+	- but we can't eval every function call in parsing because we have just defined it but the full current expression hasn't been parsed yet
+
+- important to keep in mind difference bewtween parsing
+and evaluating
+	- confused it a bit by putting Compile method in the parser file
+	- a function definition followed by only a call is fine because both can be parsed then evaluated
+		- eval on the call while parsing would fail because we haven't added the definition to namepsace
+	a func definition followed by some expression of a call like "f(1) + 1 will fail because we don't know how to parse a function call followed by plus
+		- there's no symbol that statement can be replaced by
+
+- idea: check if f is in namespace, if it is replace the function call with f.eval()
+	- but then you end up with literal values in the parser results not tokens
+	- and we still get "unexpected token PLUS" without expr : func_call
+
+-  "function f(a){ return(a+1) } ; f(1) + 1"  works but when it's two code statement parsed and evald after each other we get "int 2 has no attribute value" in the final add
+	- why doesn't this happen when it's one line? I don't understand..
+		- because f isn't in namepsace yet when parsing it all one line
+		- so we don't evaluate the func call, we just put it in the add object
+
+- ffs.....
+	- why have "stmt : func_call" in the first place?
+	- because i thought that's what braid guy did? because it seems more complex than an expression? because stmt : func_def?
+	- why not expr : func_call?
+		- arg_list is list of expr..
+
+	- funcdef has to be a statement because block can contain new lines
+
+- arg_list for def and call is DIFFERENT
+	- function definition should only take variables
+	- parameters vs arguments!
+
+-----
+
+
+

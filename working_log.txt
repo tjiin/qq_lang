@@ -151,15 +151,32 @@ IDEA: ('case1', '1+1', eval(self[-1])) ) => ('case1', '1+1', 2)
 
 ( 07:27:44 AM | Tue Nov 05 2019 )
 - really annoying case ->  "let x = 1 \n -x * 2"
-  - seems simple but but i've been stick here for a while
-  - finally fixed it by expanding the negative regex expression even more, which is starting
-    to seem ridiculous
+  - seems simple but but i've been stuck here for a while
+  - finally fixed it by expanding the negative regex expression even more, which is starting to seem ridiculous
       - "^-|(?<=\()-|(?<=[\+\-\*\/\^])-|(?<==\s)-|(?<=[^0-9./)])-(?=[0-9.a-zA-Z])"
       - actually just made it slightly longer and fixed a case after pasting it in here
       - isn't this what the parser is for? can't we write in all the cases where a negative symbol should be added instead of minus?..
       - still doesn't fully work.. "let x = 1 \n --x * 2" ..
 
 
-
-
-
+( 07:10:26 AM | Thu Nov 07 2019 )
+- working for last 7+ hours
+- nested function calls work, e.g "f(g(x))"
+- expressions containing function calls work, e.g. "1 + f()"
+    - e.g. "function f(a,b){ let c = (a+1)/(b - 1) \n return(c) } ; 
+            function g(x){return(x+1)} ; f(g(1),7) + 2"
+    - this took a lot of work, having "stmt -> func_call" was the biggest problem
+      and I didn't think of just removing of, "expr : func_call" as we wanted for awhile
+    - don't know why I didn't see that.. definitions can contain new lines but calls don't
+      so there's no good reason it can't be an expr i just assumed that rule was needed
+- realized in fixing sr/rr conflicts that arg_list object shouldn't be the same 
+  for func call/def, oops..
+    - it worked but required uncessary handling, func_def should only be passed identifiers
+- cleaned up function section of ast
+- fixed precedence rules, a bunch were unecessarry or wrong
+    - order of operators for POW and NOT.. 
+- added ** to regex for pow, new arithmetic unittests using add/sub/mul/div
+  that didn't work initally
+- simplified some production rules
+    - a : b  (both nonterminal) is only really useful/meaningful if it's 
+    restricting the use of b or creating an object

@@ -4,6 +4,7 @@ from parser33 import Compile
 two_arg_arithmetic = [
     ('add 2 pos', '1 + 1'), ('sub 2 pos', '8 - 4'), ('mul 2 pos', '4 * 8',), ('div 2 pos', '12 / 3'),
     ('add 2 neg', '-10 - 9'), ('sub 2 neg', '-1 - 41'), ('mul 2 neg', '-4 * -2',), ('div 2 neg', '-50 / -2'),
+    ('pow 2 pos', '2**3'), ('pow 2 neg', '-2**-3')
 ]
 
 compound_negatives = [
@@ -15,9 +16,12 @@ compound_negatives = [
 ]
 
 harder_arithmetic = [
+    # Remember you can't use ^ for power if you're going to use python eval to check answer
     ('add sub 3 float', '2.5 - 99.65 + 0.001'), ('mul div 3 float', '2.5 * 99.65 / 0.001'),
     ('add/sub/mul/div nest paren neg', '((-0.1)+2.5)*(-99.65/(9-0.001))+((2.7))'),
     ('add/sub/mul/div OOP', '1 + 2 - 3 * 2 / 3 - 11'),
+    ('add/sub/mul/div/pow OOP (1)', '3 - 3**2 * 2 + 10 + 2**3**-1'),
+    ('add/sub/mul/div/pow OOP (2)', '(1+(2-3**3))*(3-2)'),
 ]
 
 implicit_multiply = [
@@ -95,10 +99,22 @@ multi_line_vars = [
 basic_functions = [
     ('func no arg no body return', r'function f(){ return(1+1) } \n f()', [None, 2]),
     ('1 line func no arg no body return', r'function f(){ return(1+1) } ; f()', [None, 2]),
+    ('func arg no body return', 'function f(x){ return(x*10) } ; f(2)', [None, 20]),
     ('func no arg return', r'function f(){ let x = 10.5 \n return(x*2) } \n f()', [None, 21]),
     ('func no body return', r'function f(a,b){ return((b/-3)+a*2) } \n f(10,6)', [None, 18]),
     ('1 line func arg body return', r'function f(a,b){ return((b/-3)+a*2) } ; f(10,6)', [None, 18]),
     ('1 line func no-body return', r'function f(a,b){ return((b/-3)+a*2) } \n f(10,6)', [None, 18])
+]
+
+function_expressions = [
+    ('2 func nested expr', "function f(a){ return(a+1) } ; function g(a){ return(a*10) } ; 1.5 + f(g(1)-6)",
+     [None, None, 6.5]),
+    ('2 func bool comp expr (1)', "function f(a){return(a+1)} ; function g(a){return(a*10)} ; f(4)+1 == 7 or g(1) < 9",
+     [None, None, False]),
+    ('2 func bool comp expr (2)', "function f(a){return(a+1)} ; function g(a){return(a*10)} ; f(4)+1 == 7 or g(1)>9",
+     [None, None, True]),
+    ('2 func nested arg expr', r'function f(a,b){ let c = (a+1)/(b - 1) \n return(c) } ; function g(x){return(x+1)} ; '
+                               r' f( g(1), 7 ) + 2', [None, None, 2.5]),
 ]
 
 
@@ -182,6 +198,13 @@ class TestInterpreter(TestCase):
 
     def test_basic_functions(self):
         for m, p1, ans in basic_functions:
+            with self.subTest(msg=m, case=p1, expected=ans):
+                program = Compile(p1)
+                print('=' * 30 + '\n' + f'{p1} --> {program.output}' + '\n' + '=' * 30)
+                self.assertEqual(ans, program.output)
+
+    def test_function_expressions(self):
+        for m, p1, ans in function_expressions:
             with self.subTest(msg=m, case=p1, expected=ans):
                 program = Compile(p1)
                 print('=' * 30 + '\n' + f'{p1} --> {program.output}' + '\n' + '=' * 30)

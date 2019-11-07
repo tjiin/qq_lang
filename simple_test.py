@@ -12,43 +12,27 @@ from pprint import *
 # code = r' test(x,y,z)'
 
 # code1 = r' function test(a) { a = 10 \n return(a * 10 + a) } \n test(2) '
-
 # code1 = r' function test(a) { a = a * 10 \n return(a + 2) } \n test(2) '
-
 # code1 = r' function test(a) { let b = 10 \n return(b * 10 + a) } '
 # code2 = r' test(5) '
 
-# code1 = '-10 * -9'
-# code1 = '10 * -9'
-# code1 = '-10*-9'
-# code1 = '----(3)'
+# code1 = "function test(a){ return(a+1) } ; function parent(b){ let c = b + test(b) \\n return(c) } ; parent(2)"
+# code1 = "1 + test()"
+# code1 = "test() + 1"
 
-'''code1 = """
-        function parent(a){
-            a = a * 10
-            function child(b){
-                b = b + 1
-                return(b)
-            }
-        return(a + child(a))
-        }
-        """'''
-
-code1 = "function test(a){ return(a+1) } ; function parent(b){ let c = b + test(b) \\n return(c) } ; parent(2)"
+# code1 = "function f(a){ return(a+1) } ; function g(a){ return(a*10) } ; 1 + f(g(1)-8)"
+# code1 = "function f(a){ return(a+1) } ; function g(a){ return(a*10) } ; "
+# code2 = "f(5) + 1 == 7 and g(1) > 9"
+# code1 = "f(g()) + 1"
+# code1 = "f() == True"
 # code1 = "function test(a){ return(a+1) } ; test(10) ; 1+1 ; 5 > -5"
-# code3 = "parent(2)"
+
+# code1 = r'function f(a,b){ let c = (a-1)*(b+1) \n return(c) } ; function g(x){ return(x+1) } ; f( g(1), 7 )'  FAILS
+# code1 = r'function f(a,b){ let c = (a+1)/(b - 1) \n return(c) } ; function g(x){ return(x+1) } ; f( g(1), 7 )'
+code1 = "1 -1"
+code1 = 'let x = 10; x-1'
 
 program = Compile(code1)
 space = program.namespace
-"""program.print_full()
-program = Compile(code2, space=space)
-program.print_full()
-program = Compile(code3, space=space)
-program.print_full()"""
-
-
-"""print('-'*50)
-program = Compile(code2, space=space)
-program.print_full()"""
-
-
+# print('-'*10)
+# program = Compile(code2, space=space)
