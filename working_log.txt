@@ -166,9 +166,10 @@ IDEA: ('case1', '1+1', eval(self[-1])) ) => ('case1', '1+1', 2)
     - e.g. "function f(a,b){ let c = (a+1)/(b - 1) \n return(c) } ; 
             function g(x){return(x+1)} ; f(g(1),7) + 2"
     - this took a lot of work, having "stmt -> func_call" was the biggest problem
-      and I didn't think of just removing of, "expr : func_call" as we wanted for awhile
+      and I didn't think of just removing of it
+    - now "expr : func_call" as we wanted for a while
     - don't know why I didn't see that.. definitions can contain new lines but calls don't
-      so there's no good reason it can't be an expr i just assumed that rule was needed
+      so there's no good reason it can't be an expr, just assumed that rule was needed
 - realized in fixing sr/rr conflicts that arg_list object shouldn't be the same 
   for func call/def, oops..
     - it worked but required uncessary handling, func_def should only be passed identifiers
@@ -180,3 +181,4 @@ IDEA: ('case1', '1+1', eval(self[-1])) ) => ('case1', '1+1', 2)
 - simplified some production rules
     - a : b  (both nonterminal) is only really useful/meaningful if it's 
     restricting the use of b or creating an object
+- negative still causing issues, new rule I added in last entry makes it match 1 -1 or x-1

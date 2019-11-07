@@ -281,7 +281,7 @@ and evaluating
 	- why have "stmt : func_call" in the first place?
 	- because i thought that's what braid guy did? because it seems more complex than an expression? because stmt : func_def?
 	- why not expr : func_call?
-		- arg_list is list of expr..
+		- arg_list is list of expr though..
 
 	- funcdef has to be a statement because block can contain new lines
 
