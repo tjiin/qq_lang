@@ -195,10 +195,59 @@ class Assignment(Node):
             result = self.expr.eval(space)
         else:
             result = self.expr.value
-            if type(result) is str and self.expr.name == 'INTEGER': result = int(result)
+            if type(result) is str and self.expr.name == 'INT': result = Int(result)
             elif type(result) is str and self.expr.name == 'FLOAT': result = float(result)
         print(f'Assignment.eval() : "{self.name}" = {self.expr} = "{result}"')
         space[self.name] = result
+
+
+# check if boolean expr? create new class
+class IfStmt(Node):
+    def __init__(self, condition, block, elif_list=None, else_stmt=None):
+        self.condition = condition
+        self.block = block
+        self.elif_list = elif_list
+        self.else_stmt = else_stmt
+        self.space = None
+        print(f"IfStmt.init() : condition = {condition}  |  block = {block} ")
+
+    # We could define a smaller boolean statement evaluator that both If and Elif use
+    # - only has condition and block
+    def eval(self, space):
+        result = self.condition.eval(space)
+        print(f'IfStmt.eval() : if condition -> {result}')
+        if result: return self.block.eval(space)   # IF
+        elif self.elif_list:  #is not None         # ELIF
+            for i,condition in enumerate(self.elif_list.conditions):  # lambda or map?
+                elif_cond_eval = condition.eval(space)
+                print(f'IfStmt.eval() : elif i={i} | {condition} | {condition.left} , {condition.right} -> {elif_cond_eval}')
+                if elif_cond_eval:
+                    print(f'IfStmt.eval() : elif index {i} ({condition}) -> True')
+                    print(f'- IfStmt.eval() : evaluating elif block {self.elif_list.blocks[i]}')
+                    elif_output = self.elif_list.blocks[i].eval(space)
+                    return elif_output
+        if self.else_stmt is not None:           # ELSE
+            print(f'IfStmt.eval() : No true elif, evaluating else block ({self.else_stmt})')
+            else_output = self.else_stmt.eval(space)
+            print(f'IfStmt.eval() : - else block eval returned {else_output}')
+            return else_output
+        else: return None # Single if or if/elif with no else
+
+
+class ElifCases(Node):
+    def __init__(self, condition, block):
+        self.conditions = [condition]
+        self.blocks = [block]
+
+    def append_case(self, condition, block):
+        self.conditions.append(condition)
+        self.blocks.append(block)
+
+    def eval(self, space):
+        pass
+
+    def __len__(self):
+        return len(self.conditions)
 
 
 class Float(Node):
@@ -212,7 +261,7 @@ class Float(Node):
         print(str(self.value))
 
 
-class Integer(Node):
+class Int(Node):
     def __init__(self, value):
         self.value = value
 

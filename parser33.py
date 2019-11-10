@@ -8,26 +8,30 @@ import warnings
 
 pg = ParserGenerator(
     # List of all token names accepted by the parser
-    # 'STRING', 'BOOL', 'LSQR', 'RSQR', 'CARET', 'MOD', 'IF', 'ELSE', 'ELIF',
-    ['INTEGER', 'FLOAT', 'SEMICOLON', 'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE',  'COMMA',
-     'NEGATIVE', 'PLUS', 'MINUS', 'MUL', 'DIV', 'POW', 'LET', 'IDENTIFIER', '=', '==', '!=',
-     'AND', 'OR', 'NOT', 'FUNCTION', 'RETURN', '<', '>', '<=', '>=', 'TRUE', 'FALSE',
+    # 'STRING', 'BOOL', 'LSQR', 'RSQR', 'CARET', 'MOD',
+    ['INT', 'FLOAT', ';', '(', ')', '{', '}',  ',',  'IF', 'THEN', 'ELSE', 'ELIF', ':',
+     'NEG', 'PLUS', 'MINUS', 'MUL', 'DIV', 'POW', 'LET', 'ID', '=', '==', '!=',
+     'AND', 'OR', 'NOT', 'DEF', 'RETURN', '<', '>', '<=', '>=', 'TRUE', 'FALSE', '=>',
      'NEWLINE', '$end'],
     # List of precedence rules in ascending ORDER
     precedence=[
-        ('left', ['FUNCTION']),
-        ('left', ['IDENTIFIER']),
+        ('left', ['DEF']),
+        ('left', ['ID']),
+        ('left', ['IF', 'ELSE']),
+        ('left', ['ELIF']),
+        ('left', ['=>']),
         ('left', ['=']),
         ('left', ['OR']),
         ('left', ['AND']),
         ('left', ['NOT']),
+        ('left', [',']),
         ('left', ['<', '<=', '>', '>=', '!=', '==']),
-        ('left', ['FLOAT', 'INTEGER']),
+        ('left', ['FLOAT', 'INT']),
         ('left', ['PLUS', 'MINUS']),
-        ('left', ['NEGATIVE']),
+        ('left', ['NEG']),
         ('left', ['MUL', 'DIV']),
         ('right', ['POW']),
-    ]  # cache_id='pg_cache1'
+    ]  # cache_IDENTIFIER='pg_cache1'
 )
 
 
@@ -51,20 +55,51 @@ def block_statement(state, p):
 
 @pg.production('statement : stmt $end')
 @pg.production('statement : stmt NEWLINE')
-@pg.production('statement : stmt SEMICOLON')
+@pg.production('statement : stmt ;')
 def statement(state, p):
     return p[0]
 
 
+# FunctionDef - arrow notation - no params
+# - implicit return
+@pg.production('stmt : ID ( ) => { block return }') 
+@pg.production('stmt : ID ( ) => block')
+@pg.production('stmt : ID ( ) => { block }')
+def arrow_def_no_params(state, p):
+    if len(p) == 5:
+        return FunctionDef(p[0], body=None, param_list=None, return_stmt=p[4])
+    elif len(p) == 6:
+        return FunctionDef(p[0], body=p[5], param_list=None, return_stmt=None)
+    else:
+        return FunctionDef(p[0], body=p[5], param_list=None, return_stmt=p[6])
+
+
+# FunctionDef - arrow notation
+@pg.production('stmt : ID ( param_list ) => { block return }')
+@pg.production('stmt : ID ( param_list ) => block')
+@pg.production('stmt : ID ( param_list ) => { block }')
+def arrow_def_params(state, p):
+    if len(p) == 6:
+        return FunctionDef(p[0], body=None, param_list=p[2], return_stmt=p[5])
+    elif len(p) == 7:
+        return FunctionDef(p[0], body=p[6], param_list=p[2], return_stmt=None)
+    else:
+        return FunctionDef(p[0], body=p[6], param_list=p[2], return_stmt=p[7])
+    
+# FunctionDef - arrows params but no block
+@pg.production('stmt : ID ( param_list ) => { return }')
+def arrow_def_params_no_body_return(state, p):
+    return FunctionDef(p[0], body=None, param_list=p[2], return_stmt=p[6])
+
 # FunctionDef - params but no block
-@pg.production('stmt : FUNCTION IDENTIFIER LPAREN param_list RPAREN LBRACE return RBRACE')
+@pg.production('stmt : DEF ID ( param_list ) { return }')
 def func_def_no_body(state, p):
     return FunctionDef(p[1], body=None, param_list=p[3], return_stmt=p[6])
 
 
-# FunctionDef - args       0        1         2       3      4      5      6     7      8
-@pg.production('stmt : FUNCTION IDENTIFIER LPAREN param_list RPAREN LBRACE block return RBRACE')
-@pg.production('stmt : FUNCTION IDENTIFIER LPAREN param_list RPAREN LBRACE block RBRACE')
+# FunctionDef - args     0  1       2      3 4    5     6   7      8
+@pg.production('stmt : DEF ID ( param_list ) { block return }')
+@pg.production('stmt : DEF ID ( param_list ) { block }')
 def func_def(state, p):
     if len(p) == 9:
         return FunctionDef(p[1], p[6], p[3], p[7])
@@ -73,8 +108,8 @@ def func_def(state, p):
 
 
 # FunctionDef - no args but block    1         2     3      4      5     6      7
-@pg.production('stmt : FUNCTION IDENTIFIER LPAREN RPAREN LBRACE block return RBRACE')
-@pg.production('stmt : FUNCTION IDENTIFIER LPAREN RPAREN LBRACE block RBRACE')
+@pg.production('stmt : DEF ID ( ) { block return }')
+@pg.production('stmt : DEF ID ( ) { block }')
 def func_def_no_args(state, p):
     if len(p) == 8:
         return FunctionDef(p[1], body=p[5], param_list=None, return_stmt=p[6])
@@ -83,14 +118,14 @@ def func_def_no_args(state, p):
 
 
 # FunctionDef - no args or block
-@pg.production('stmt : FUNCTION IDENTIFIER LPAREN RPAREN LBRACE return RBRACE')
+@pg.production('stmt : DEF ID ( ) { return }')
 def func_def_no_arg_no_block(state, p):
     return FunctionDef(p[1], return_stmt=p[5])
 
 
 # FunctionCall
-@pg.production('func_call : IDENTIFIER LPAREN RPAREN')
-@pg.production('func_call : IDENTIFIER LPAREN arg_list RPAREN')
+@pg.production('func_call : ID ( )')
+@pg.production('func_call : ID ( arg_list )')
 def func_call(state, p):
     if len(p) == 3:
         return FunctionCall(p[0])
@@ -98,13 +133,13 @@ def func_call(state, p):
         return FunctionCall(p[0], p[2])
 
 
-@pg.production('param_list : IDENTIFIER')
+@pg.production('param_list : ID')
 def single_param(state, p):
     a = ParamList(p[0])
     return a
 
 
-@pg.production('param_list : IDENTIFIER COMMA param_list')
+@pg.production('param_list : ID , param_list')
 def param_list(state, p):
     if type(p[2]) is ParamList:
         a = p[2]
@@ -120,7 +155,7 @@ def single_arg(state, p):
     return a
 
 
-@pg.production('arg_list : expr COMMA arg_list')
+@pg.production('arg_list : expr , arg_list')
 def arg_list(state, p):
     if type(p[2]) is ArgList:
         a = p[2]
@@ -135,12 +170,76 @@ def return_stmt(state, p):
     return p[1]
 
 
-@pg.production('stmt : LET IDENTIFIER = expr')
+@pg.production('stmt : IF expr : stmt')
+@pg.production('stmt : IF expr { block }')
+#@pg.production('stmt : IF expr THEN stmt')
+def if_then_stmt(state, p):
+    if len(p) == 3:
+        return IfStmt(p[1], p[2])
+    else:
+        return IfStmt(p[1],p[3])
+
+
+@pg.production('stmt : IF expr { stmt } ELSE { stmt }')
+@pg.production('stmt : IF expr { block } ELSE { block }')
+def if_else_block(state, p):
+    return IfStmt(p[1], p[3], elif_list=None, else_stmt=p[7])
+
+
+@pg.production('stmt : IF expr THEN stmt ELSE stmt')
+@pg.production('stmt : IF expr : stmt ELSE stmt')
+def if_else_basic(state, p):
+    return IfStmt(p[1], p[3], elif_list=None, else_stmt=p[5])
+    #return IfStmt(p[1], p[3], elif_list=None, else_stmt=p[6])
+
+
+                     # 0   1   2   3   4     5      6   7   8  9
+#@pg.production('stmt : IF expr { block } elif_list', precedence='ELSE') # no else
+@pg.production('stmt : IF expr { block } elif_list ELSE { block }', precedence='ELSE')
+def if_elif_else_block(state, p):
+    if len(p) == 6:
+        print('NO ELSE')
+        return IfStmt(p[1], p[3], elif_list=p[5])
+    else:
+        print('IF ELIF ELSE')
+        return IfStmt(p[1], p[3], elif_list=p[5], else_stmt=p[8])
+
+
+                     #  0   1    2   3       4       5   6
+@pg.production('stmt : IF expr THEN stmt elif_list')  # no else
+@pg.production('stmt : IF expr THEN stmt elif_list ELSE stmt')
+def if_then_elif_else_(state, p):
+    if len(p) == 5:
+        print('NO ELSE')
+        return IfStmt(p[1], p[3], elif_list=p[4], else_stmt=None)
+    else:
+        print('IF ELIF ELSE')
+        return IfStmt(p[1], p[3], elif_list=p[4], else_stmt=p[6])
+
+
+@pg.production('elif_list : ELIF expr THEN stmt')
+@pg.production('elif_list : ELIF expr { block }')
+def single_case(state, p):
+   e = ElifCases(p[1], p[3])
+   return e
+
+
+"""@pg.production('elif_list : ELIF elif_list')
+def elif_list(state, p):
+   if type(p[1]) is ElifCases:
+       e = p[1]
+   else:                                                       
+       e = ElifCases(p[1])
+   e.append_case(p[0])
+   return a"""
+
+
+@pg.production('stmt : LET ID = expr')
 def assign_id(state, p):
     return Assignment(p[1], p[3])
 
 
-@pg.production('stmt : IDENTIFIER = expr')
+@pg.production('stmt : ID = expr')
 def update_id(state, p):
     return Assignment(p[0], p[2])
 
@@ -155,13 +254,13 @@ def expr_func_call(state, p):
     return p[0]
 
 
-@pg.production('expr : NEGATIVE expr')
+@pg.production('expr : NEG expr')
 def neg_expr(state, p):
     return FlipSign(p[1])
 
 
-@pg.production('expr : IDENTIFIER')
-def eval_id(state, p):
+@pg.production('expr : ID')
+def eval_IDENTIFIER(state, p):
     return Variable(p[0])
 
 
@@ -199,7 +298,7 @@ def bool_literals(state, p):
     return TrueT if p[0].gettokentype() == 'TRUE' else FalseT
 
 
-@pg.production('expr : LPAREN expr RPAREN')
+@pg.production('expr : ( expr )')
 def paren_expr(state, p):
     return p[1]
 
@@ -225,13 +324,13 @@ def size_comparison_ops(state, p):
 
 
 @pg.production('number : FLOAT')
-@pg.production('number : INTEGER')
+@pg.production('number : INT')
 def eval_number(state, p):
     t0 = p[0].gettokentype()
     if t0 == 'FLOAT':
         return Float(float(p[0].getstr()))
-    elif t0 == 'INTEGER':
-        return Integer(int(p[0].getstr()))
+    elif t0 == 'INT':
+        return Int(int(p[0].getstr()))
 
 
 @pg.production('expr : expr POW expr')
@@ -258,25 +357,25 @@ def binary_op_expr(state, p):
 
 
 # EVEN PYTHON DOESN'T EVALUATE THIS ("int or float object is not callable")
-@pg.production('expr : number LPAREN expr RPAREN POW expr', precedence='POW')
+@pg.production('expr : number ( expr ) POW expr', precedence='POW')
 def implicit_mul_num_pow(state, p):
     return Mul(p[0], Pow(p[2], p[5]))
 
 
 # EVEN PYTHON DOESN'T EVALUATE THIS ("int or float object is not callable")
-@pg.production('expr : number LPAREN expr RPAREN', precedence='MUL')
+@pg.production('expr : number ( expr )', precedence='MUL')
 def implicit_mul_num_par(state, p):
     return Mul(p[0], p[2])
 
 
 # EVEN PYTHON DOESN'T EVALUATE THIS ("int or float object is not callable")
-@pg.production('expr : LPAREN expr RPAREN number', precedence='MUL')
+@pg.production('expr : ( expr ) number', precedence='MUL')
 def implicit_mul_par_num(state, p):
     return Mul(p[1], p[3])
 
 
 # EVEN PYTHON DOESN'T EVALUATE THIS ("int or float object is not callable")
-@pg.production('expr : LPAREN expr RPAREN LPAREN expr RPAREN', precedence='MUL')
+@pg.production('expr : ( expr ) ( expr )', precedence='MUL')
 def implicit_mul_par_par(state, p):
     return Mul(p[1], p[4])
 

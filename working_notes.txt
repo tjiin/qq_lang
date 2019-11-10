@@ -35,7 +35,7 @@ function name(){ block }
 function name(){ block return }
 function name(x,y,z){ block return }
 
-
+func_def : DEF ID ( ){ block }
 func_def : FUNCTION IDENTIFIER LPAREN RPAREN LBRACE block RBRACE
 	     | FUNCTION IDENTIFIER LPAREN RPAREN LBRACE block return RBRACE
 	     | FUNCTION IDENTIFIER LPAREN arg_list RPAREN LBRACE block return RBRACE
@@ -291,5 +291,8 @@ and evaluating
 
 -----
 
+https://docs.python.org/3/reference/expressions.html#operator-precedence
 
+-----
 
+- 

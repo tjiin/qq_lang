@@ -97,24 +97,33 @@ multi_line_vars = [
 ]
 
 basic_functions = [
-    ('func no arg no body return', r'function f(){ return(1+1) } \n f()', [None, 2]),
-    ('1 line func no arg no body return', r'function f(){ return(1+1) } ; f()', [None, 2]),
-    ('func arg no body return', 'function f(x){ return(x*10) } ; f(2)', [None, 20]),
-    ('func no arg return', r'function f(){ let x = 10.5 \n return(x*2) } \n f()', [None, 21]),
-    ('func no body return', r'function f(a,b){ return((b/-3)+a*2) } \n f(10,6)', [None, 18]),
-    ('1 line func arg body return', r'function f(a,b){ return((b/-3)+a*2) } ; f(10,6)', [None, 18]),
-    ('1 line func no-body return', r'function f(a,b){ return((b/-3)+a*2) } \n f(10,6)', [None, 18])
+    ('func no arg no body return', r'def f(){ return(1+1) } \n f()', [None, 2]),
+    ('1 line func no arg no body return', r'def f(){ return(1+1) } ; f()', [None, 2]),
+    ('func arg no body return', 'def f(x){ return(x*10) } ; f(2)', [None, 20]),
+    ('func no arg return', r'def f(){ let x = 10.5 \n return(x*2) } \n f()', [None, 21]),
+    ('func no body return', r'def f(a,b){ return((b/-3)+a*2) } \n f(10,6)', [None, 18]),
+    ('1 line func arg body return', r'def f(a,b){ return((b/-3)+a*2) } ; f(10,6)', [None, 18]),
+    ('1 line func no-body return', r'def f(a,b){ return((b/-3)+a*2) } \n f(10,6)', [None, 18])
 ]
 
 function_expressions = [
-    ('2 func nested expr', "function f(a){ return(a+1) } ; function g(a){ return(a*10) } ; 1.5 + f(g(1)-6)",
+    ('2 func nested expr', "def f(a){ return(a+1) } ; def g(a){ return(a*10) } ; 1.5 + f(g(1)-6)",
      [None, None, 6.5]),
-    ('2 func bool comp expr (1)', "function f(a){return(a+1)} ; function g(a){return(a*10)} ; f(4)+1 == 7 or g(1) < 9",
+    ('2 func bool comp expr (1)', "def f(a){return(a+1)} ; def g(a){return(a*10)} ; f(4)+1 == 7 or g(1) < 9",
      [None, None, False]),
-    ('2 func bool comp expr (2)', "function f(a){return(a+1)} ; function g(a){return(a*10)} ; f(4)+1 == 7 or g(1)>9",
+    ('2 func bool comp expr (2)', "def f(a){return(a+1)} ; def g(a){return(a*10)} ; f(4)+1 == 7 or g(1)>9",
      [None, None, True]),
-    ('2 func nested arg expr', r'function f(a,b){ let c = (a+1)/(b - 1) \n return(c) } ; function g(x){return(x+1)} ; '
+    ('2 func nested arg expr', r'def f(a,b){ let c = (a+1)/(b - 1) \n return(c) } ; def g(x){return(x+1)} ; '
                                r' f( g(1), 7 ) + 2', [None, None, 2.5]),
+]
+
+basic_if_statements = [
+    ('basic if, True', "let x = -1 ; if( x > 0 ) then x = 0", -1),
+    ('basic if, False', "let x = -1 ; if( x < 0 ) then x = 0", 0),
+    ('basic if then, True', "let x = -1 ; if( x > 0 ) then x = 0", -1),
+    ('basic if then, False', "let x = -1 ; if( x < 0 ) then x = 0", 0),
+    #('basic if block, True', "f(x)=>{let c=x+1; return(c)} ; if(0 < 5){let y = f(0)*2 ; y=y+1 }",  [None, ])
+    # ('basc if else stmt let x = 0; if( x < 0 ) then x = -10; else x = 10; ", )
 ]
 
 
@@ -205,6 +214,13 @@ class TestInterpreter(TestCase):
 
     def test_function_expressions(self):
         for m, p1, ans in function_expressions:
+            with self.subTest(msg=m, case=p1, expected=ans):
+                program = Compile(p1)
+                print('=' * 30 + '\n' + f'{p1} --> {program.output}' + '\n' + '=' * 30)
+                self.assertEqual(ans, program.output)
+
+    def test_basic_if(self):
+        for m, p1, ans in basic_if_statements:
             with self.subTest(msg=m, case=p1, expected=ans):
                 program = Compile(p1)
                 print('=' * 30 + '\n' + f'{p1} --> {program.output}' + '\n' + '=' * 30)

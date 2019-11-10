@@ -1,12 +1,11 @@
 from lexer import lexer
-from parser33 import parser
-import ast
+from parser33 import Compile
 import sys
 import os
 
 
 def interpret(code):
-	return parser.parse(lexer.lex(code)).eval()
+	return Compile(code)
 
 
 def main():

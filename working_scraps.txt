@@ -6,3 +6,5 @@ mock_out.getvalue()
 
 for t in lexer.lex(p1):
     print(t)
+
+# lg.add('NO_EQUALS', r'^([a-zA-Z0-9_\+\-\*\/\^\s\(\).,]+)')
