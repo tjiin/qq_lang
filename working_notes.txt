@@ -295,4 +295,9 @@ https://docs.python.org/3/reference/expressions.html#operator-precedence
 
 -----
 
-- 
+- if statement eval
+	- eval condition. if true eval block and return result
+	- or keep them separate but linked
+
+- does the if object have the block code and determine if it can be executed?
+- or do blocks have condition statements they evaluate?

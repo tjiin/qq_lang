@@ -8,3 +8,19 @@ for t in lexer.lex(p1):
     print(t)
 
 # lg.add('NO_EQUALS', r'^([a-zA-Z0-9_\+\-\*\/\^\s\(\).,]+)')
+
+
+
+class ConditionalAssignment(Node):
+    def __init__(self, identif, bool_stmt, assign_true, assign_false):
+        self.identif = identif
+        self.bool_stmt = bool_stmt
+        self.assign_true = assign_true
+        self.assign_false = assign_false
+
+    def eval(self, space):
+        result = self.bool_stmt.eval(space)
+        if result:
+            Assignment(self.identif, self.assign_true).eval(space)
+        else:
+            Assignment(self.identif, self.assign_false).eval(space)

@@ -1,7 +1,6 @@
 from lexer import lexer
 from parser33 import parser
 from pprint import *
-from ast import data_dict
 
 
 def f(code):

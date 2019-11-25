@@ -182,3 +182,13 @@ IDEA: ('case1', '1+1', eval(self[-1])) ) => ('case1', '1+1', 2)
     - a : b  (both nonterminal) is only really useful/meaningful if it's 
     restricting the use of b or creating an object
 - negative still causing issues, new rule I added in last entry makes it match 1 -1 or x-1
+
+
+( 02:34:35 PM | Sun Nov 10 2019 )
+- working a lot of this morning and last night
+- added if/elif/else
+- tried too many different syntax variations and it became a bit of a mess
+  - can definitely see the appeal to having just one way to do something
+- mass renaming, FUNCTION IDENTIFIER LPAREN arg_list RIGHTPAREN    --->   DEF ID ( arg_list )
+- the way if statements are defined is kind of messy, will probably change
+- looking at a lof of c++ and javascript syntax for ideas

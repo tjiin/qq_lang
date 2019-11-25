@@ -55,6 +55,7 @@ code1 = "let x = 25.2 ; if( x > 0 ){ x = 0 ; }"
 code1 = "let x = 25.2 ; if( x > 0 ): x = 0 "
 
 code1 = "let x = 25.2 ; if x > 0 then x = 1 else x = -1"
+
 code1 = "let x = -0.01 ; if x > 0 then x = 1 else x = -1"
 code1 = "let x = -0.01 ; if x > 0: x = 1 else x = -1"
 code1 = "let x = -0.01 ; if(x > 0): x = 1 else x = -1"
@@ -67,12 +68,33 @@ code1 = "let x = -10 ; if x > 0 then x = 1 elif x < 0 then x = -1"
 code1 = "let x = 0 ; if x > 0 then x = 1 elif x < 0 then x = -1"      # good test case
 code1 = "let x = 25.2 ; if x > 0 then x = 1 elif x < 0 then x = -1"
 
-code1 = "let x=-10;if(x>0){x=1;}elif(x==0){x=0;}else{x=-1;}"
+
+code1 = "let x = 25.2 ; if x > 0 then x = 1 elif x == 0 then x = 0 else x = -1"
+
+"""code1 = "let x=-10;if(x>0){x=1;}elif(x==0){x=0;}else{x=-1;}"
 code1 = "let x=-10;if x>0{x=1;}elif x==0{x=0;}else{x=-1;}"
+
+
+code1 = "f(a)=>{let c=0; if a<0:c=-1 else c=1; return(c)} ; f(0)"
+
+code1 = "def g(x){ return(x/2) } ; let x = 15 ; let y = g(x) >= 10 ? 3 : -3"
+
+code1 = "f(x)=>x+1 ; f(10)"
+
+code1 = "2 > 5 ? 10 : -10"
+
+code1 = r"let x = 2 > 5 ? 10 : -10"
+
+code1 = "let a = 0; let b = a; " # let c = 2; a = b = 10;"
+
+code1 = "let x = 10; while(x > 0){ x = x - 1; }; let y = x;"
+
+code1 = "let x = 0; x++"""
+
+
 
 # code1 = "let x = -0.01 ; if(x > 0){  x = 1 ; let y = x - 2 ; } else { x = -1 ; let y = x + 2 ; }"]]
 # code1 = "let x = 0.01 ; if(x > 0){  x = 1 ; let y = x - 2 ; } else { x = -1 ; let y = x + 2 ; }"
-
 
 
 program = Compile(code1)

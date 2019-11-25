@@ -48,10 +48,8 @@ class Block(Node):
         for i, s in enumerate(reversed(self.statements)):
             if s is not None:
                 r = s.eval(space)
-                if hasattr(s, 'name'):
-                    print(f'-line {i}  |  {s.name}  |  result = {r}')
-                else:
-                    print(f'-line {i}  |  {s}  |  result = {r}')
+                if hasattr(s, 'name'): print(f'-line {i}  |  {s.name}  |  result = {r}')
+                else: print(f'-line {i}  |  {s}  |  result = {r}')
                 results.append(r)
         results = results[0] if len(results) == 1 else results
         print(f'--- Block.eval() output = {results}\n')
@@ -110,6 +108,7 @@ class FunctionDef(Node):
         self.params = param_list.params if param_list is not None else None
         print(f'FunctionDef.init() self.params = {self.params}')
         self.return_stmt = return_stmt
+        print(f"FunctionDef.init() : return = {self.return_stmt}")
         self.space = None
 
     def eval(self, space):
@@ -159,6 +158,21 @@ class ArgList(Node):
         return len(self.args)
 
 
+class WhileLoop(Node):
+    def __init__(self, bool_stmt, block):
+        self.bool_stmt = bool_stmt
+        self.block = block
+
+    def eval(self, space):
+        print(f"WhileLoop.eval() : bool_stmt , block = {self.bool_stmt} , {self.block}")
+        i = 0
+        while self.bool_stmt.eval(space):
+            result = self.block.eval(space)
+            print(f"WhileLoop.eval() : i = {i} | result = {result}")
+
+        print(f"WhileLoop.eval() : exited loop, i = {i}")
+
+
 class Identifier(Node):
     def __init__(self, name):
         self.name = name.name
@@ -199,6 +213,7 @@ class Assignment(Node):
             elif type(result) is str and self.expr.name == 'FLOAT': result = float(result)
         print(f'Assignment.eval() : "{self.name}" = {self.expr} = "{result}"')
         space[self.name] = result
+        return result
 
 
 # check if boolean expr? create new class
@@ -248,6 +263,20 @@ class ElifCases(Node):
 
     def __len__(self):
         return len(self.conditions)
+
+
+class ConditionalExpression(Node):
+    def __init__(self, bool_stmt, if_true_expr, if_false_expr):
+        self.bool_stmt = bool_stmt
+        self.if_true_expr = if_true_expr
+        self.if_false_expr = if_false_expr
+
+    def eval(self, space):
+        result = self.bool_stmt.eval(space)
+        if result:
+            return self.if_true_expr.eval(space)
+        else:
+            return self.if_false_expr.eval(space)
 
 
 class Float(Node):

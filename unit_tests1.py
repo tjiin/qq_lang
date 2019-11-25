@@ -118,13 +118,14 @@ function_expressions = [
 ]
 
 basic_if_statements = [
-    ('basic if, True', "let x = -1 ; if( x > 0 ) then x = 0", -1),
-    ('basic if, False', "let x = -1 ; if( x < 0 ) then x = 0", 0),
-    ('basic if then, True', "let x = -1 ; if( x > 0 ) then x = 0", -1),
-    ('basic if then, False', "let x = -1 ; if( x < 0 ) then x = 0", 0),
-    #('basic if block, True', "f(x)=>{let c=x+1; return(c)} ; if(0 < 5){let y = f(0)*2 ; y=y+1 }",  [None, ])
-    # ('basc if else stmt let x = 0; if( x < 0 ) then x = -10; else x = 10; ", )
+    (' if: True', "let x=-1 ; if x > 0: x = 0", 'x', -1),
+    (' if() block False', "let x = -1 ; if( x < 0 ){ x = 0; }", 'x', 0),
+    (' if(): false', "let x = 25.2 ; if( x < 0 ): x = 0", 'x', 25.2),
+    (' if then else true', "let x = 25.2 ; if x > 0 then x = 1 else x = -1", 'x', 1),
+    (' if: else', "let x = 25.2 ; if not False: x = 0", 'x', 0),
+    (' if then elif then else', "let x = 25.2 ; if x < 0 then x = 0 elif x > 30 then x = 30 else x = 1", 'x', 1)
 ]
+
 
 
 class TestInterpreter(TestCase):
@@ -220,8 +221,8 @@ class TestInterpreter(TestCase):
                 self.assertEqual(ans, program.output)
 
     def test_basic_if(self):
-        for m, p1, ans in basic_if_statements:
+        for m, p1, var, ans in basic_if_statements:
             with self.subTest(msg=m, case=p1, expected=ans):
                 program = Compile(p1)
                 print('=' * 30 + '\n' + f'{p1} --> {program.output}' + '\n' + '=' * 30)
-                self.assertEqual(ans, program.output)
+                self.assertEqual(ans, program.namespace[var])

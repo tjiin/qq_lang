@@ -9,8 +9,8 @@ import warnings
 pg = ParserGenerator(
     # List of all token names accepted by the parser
     # 'STRING', 'BOOL', 'LSQR', 'RSQR', 'CARET', 'MOD',
-    ['INT', 'FLOAT', ';', '(', ')', '{', '}',  ',',  'IF', 'THEN', 'ELSE', 'ELIF', ':',
-     'NEG', 'PLUS', 'MINUS', 'MUL', 'DIV', 'POW', 'LET', 'ID', '=', '==', '!=',
+    ['INT', 'FLOAT', ';', '(', ')', '{', '}',  ',',  'IF', 'THEN', 'ELSE', 'ELIF', ':', '?',
+     'NEG', 'PLUS', 'MINUS', 'MUL', 'DIV', 'POW', 'LET', 'ID', '=', '==', '!=', 'WHILE',
      'AND', 'OR', 'NOT', 'DEF', 'RETURN', '<', '>', '<=', '>=', 'TRUE', 'FALSE', '=>',
      'NEWLINE', '$end'],
     # List of precedence rules in ascending ORDER
@@ -24,6 +24,7 @@ pg = ParserGenerator(
         ('left', ['OR']),
         ('left', ['AND']),
         ('left', ['NOT']),
+        ('left', ['WHILE']),
         ('left', [',']),
         ('left', ['<', '<=', '>', '>=', '!=', '==']),
         ('left', ['FLOAT', 'INT']),
@@ -76,17 +77,18 @@ def arrow_def_no_params(state, p):
 
 # FunctionDef - arrow notation
 @pg.production('stmt : ID ( param_list ) => { block return }')
-@pg.production('stmt : ID ( param_list ) => block')
+@pg.production('stmt : ID ( param_list ) => stmt')
 @pg.production('stmt : ID ( param_list ) => { block }')
 def arrow_def_params(state, p):
     if len(p) == 6:
+        print('arrow no body param return')
         return FunctionDef(p[0], body=None, param_list=p[2], return_stmt=p[5])
     elif len(p) == 7:
         return FunctionDef(p[0], body=p[6], param_list=p[2], return_stmt=None)
     else:
         return FunctionDef(p[0], body=p[6], param_list=p[2], return_stmt=p[7])
     
-# FunctionDef - arrows params but no block
+# FunctionDef - arrow notation, params but no block
 @pg.production('stmt : ID ( param_list ) => { return }')
 def arrow_def_params_no_body_return(state, p):
     return FunctionDef(p[0], body=None, param_list=p[2], return_stmt=p[6])
@@ -205,12 +207,14 @@ def if_elif_else_block(state, p):
         return IfStmt(p[1], p[3], elif_list=p[5], else_stmt=p[8])
 
 
-                     #  0   1    2   3       4       5   6
+                     # 0   1    2    3       4       5   6
 @pg.production('stmt : IF expr THEN stmt elif_list')  # no else
 @pg.production('stmt : IF expr THEN stmt elif_list ELSE stmt')
 def if_then_elif_else_(state, p):
     if len(p) == 5:
         print('NO ELSE')
+        print(f'elif : {p[4]}')
+        print(f'elif : {p[4].blocks}')
         return IfStmt(p[1], p[3], elif_list=p[4], else_stmt=None)
     else:
         print('IF ELIF ELSE')
@@ -219,29 +223,51 @@ def if_then_elif_else_(state, p):
 
 @pg.production('elif_list : ELIF expr THEN stmt')
 @pg.production('elif_list : ELIF expr { block }')
-def single_case(state, p):
-   e = ElifCases(p[1], p[3])
-   return e
+def single_elif_case(state, p):
+    e = ElifCases(p[1], p[3])
+    return e
 
 
-"""@pg.production('elif_list : ELIF elif_list')
+"""@pg.production('elif_list : elif_case')
+def single_elif_list(state, p):
+    return p[0]
+
+
+@pg.production('elif_list : elif_case elif_list')
 def elif_list(state, p):
    if type(p[1]) is ElifCases:
        e = p[1]
-   else:                                                       
-       e = ElifCases(p[1])
-   e.append_case(p[0])
-   return a"""
+   else:
+       e = ElifCases(p[1], )
+   e.append_case(p[0], )
+   return e"""
+
+
+@pg.production('condt_stmt : bool_expr ? expr : expr')
+def condt_assign(state, p):
+    return ConditionalExpression(p[0], p[2], p[4])
+
+
+@pg.production('stmt : condt_stmt')
+def condt_assign_stmt(state, p):
+    return p[0]
 
 
 @pg.production('stmt : LET ID = expr')
+@pg.production('stmt : LET ID = condt_stmt')
 def assign_id(state, p):
     return Assignment(p[1], p[3])
 
 
 @pg.production('stmt : ID = expr')
+# @pg.production('stmt : ID = expr = stmt ')
 def update_id(state, p):
     return Assignment(p[0], p[2])
+
+
+@pg.production('stmt : WHILE ( bool_expr ) { block }')
+def while_loop(state, p):
+    return WhileLoop(p[2], p[5])
 
 
 @pg.production('stmt : expr')
@@ -254,16 +280,28 @@ def expr_func_call(state, p):
     return p[0]
 
 
+
+"""#@pg.production('expr : MINUS NEG ID')
+#@pg.production('expr : ID MINUS NEG')
+@pg.production('expr : + + ID')
+@pg.production('expr : ID + +')
+def inc_dec_id(state, p):
+    print( p[0].gettokentype() )
+    if p[0].gettokentype() == 'PLUS' or p[1].gettokentype() == 'PLUS':
+        Assignment(p[2], f'{p[0]} = {p[0]} PLUS 1')"""
+
+
 @pg.production('expr : NEG expr')
 def neg_expr(state, p):
     return FlipSign(p[1])
 
 
 @pg.production('expr : ID')
-def eval_IDENTIFIER(state, p):
+def eval_identifier(state, p):
     return Variable(p[0])
 
 
+@pg.production('expr : bool_expr')
 @pg.production('expr : constant')
 @pg.production('constant : number')
 @pg.production('constant : bool_const')
@@ -271,8 +309,13 @@ def constant(state, p):
     return p[0]
 
 
-@pg.production('expr : expr != expr')
-@pg.production('expr : expr == expr')
+@pg.production('expr : ( expr )')
+def paren_expr(state, p):
+    return p[1]
+
+
+@pg.production('bool_expr : expr != expr')
+@pg.production('bool_expr : expr == expr')
 def equivalence_ops(state, p):
     if p[1].gettokentype() == '!=':
         return NotEqual(p[0], p[2])
@@ -280,9 +323,9 @@ def equivalence_ops(state, p):
         return EqualTo(p[0], p[2])
 
 
-@pg.production('expr : NOT expr')
-@pg.production('expr : expr AND expr')
-@pg.production('expr : expr OR expr')
+@pg.production('bool_expr : NOT expr')
+@pg.production('bool_expr : expr AND expr')
+@pg.production('bool_expr : expr OR expr')
 def boolean_ops(state, p):
     if len(p) == 2:
         return Not(p[1])
@@ -298,15 +341,10 @@ def bool_literals(state, p):
     return TrueT if p[0].gettokentype() == 'TRUE' else FalseT
 
 
-@pg.production('expr : ( expr )')
-def paren_expr(state, p):
-    return p[1]
-
-
-@pg.production('expr : expr <= expr')
-@pg.production('expr : expr < expr')
-@pg.production('expr : expr > expr')
-@pg.production('expr : expr >= expr')
+@pg.production('bool_expr : expr >= expr')
+@pg.production('bool_expr : expr <= expr')
+@pg.production('bool_expr : expr < expr')
+@pg.production('bool_expr : expr > expr')
 def size_comparison_ops(state, p):
     left = p[0]
     right = p[2]
@@ -356,25 +394,22 @@ def binary_op_expr(state, p):
         raise AssertionError('This should not happen!')
 
 
-# EVEN PYTHON DOESN'T EVALUATE THIS ("int or float object is not callable")
+# Python doesn't evaluate these ("int or float object is not callable")
 @pg.production('expr : number ( expr ) POW expr', precedence='POW')
 def implicit_mul_num_pow(state, p):
     return Mul(p[0], Pow(p[2], p[5]))
 
 
-# EVEN PYTHON DOESN'T EVALUATE THIS ("int or float object is not callable")
 @pg.production('expr : number ( expr )', precedence='MUL')
 def implicit_mul_num_par(state, p):
     return Mul(p[0], p[2])
 
 
-# EVEN PYTHON DOESN'T EVALUATE THIS ("int or float object is not callable")
 @pg.production('expr : ( expr ) number', precedence='MUL')
 def implicit_mul_par_num(state, p):
     return Mul(p[1], p[3])
 
 
-# EVEN PYTHON DOESN'T EVALUATE THIS ("int or float object is not callable")
 @pg.production('expr : ( expr ) ( expr )', precedence='MUL')
 def implicit_mul_par_par(state, p):
     return Mul(p[1], p[4])
