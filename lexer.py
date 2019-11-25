@@ -40,7 +40,7 @@ lg.add('POW', r'\^|\*{2}')
 lg.add('MUL', r'\*')
 lg.add('DIV', r'/')
 lg.add('=', r'=')
-lg.ignore(r'[^\S\n\t]+')
+lg.ignore(r'[^\S\t]+')
 lg.add('NEWLINE', r"\\n")
 
 lexer = lg.build()

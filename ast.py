@@ -43,16 +43,16 @@ class Block(Node):
         self.statements.append(statement)
 
     def eval(self, space):
-        print(f'\n--- Block.eval() : {list(reversed(self.statements))}')
+        # print(f'\n--- Block.eval() : {list(reversed(self.statements))}')
         results = []
         for i, s in enumerate(reversed(self.statements)):
             if s is not None:
                 r = s.eval(space)
-                if hasattr(s, 'name'): print(f'-line {i}  |  {s.name}  |  result = {r}')
-                else: print(f'-line {i}  |  {s}  |  result = {r}')
+                # if hasattr(s, 'name'): print(f'-line {i}  |  {s.name}  |  result = {r}')
+                # else: print(f'-line {i}  |  {s}  |  result = {r}')
                 results.append(r)
         results = results[0] if len(results) == 1 else results
-        print(f'--- Block.eval() output = {results}\n')
+        # print(f'--- Block.eval() output = {results}\n')
         return results
 
 
@@ -197,13 +197,14 @@ class Variable(Node):
 
 class Assignment(Node):
     def __init__(self, name, expr):
-        print(f'Assignment.init() : name = {name.value} | expr = {expr}')
+        # print(f'Assignment.init() : name = {name.value} | expr = {expr}')
         self.name = name.value
         self.expr = expr
 
     def eval(self, space):
         if self.name in space:
-            print(f'Assignment.eval() : Variable {self.name} already defined = {space[self.name]}')
+            # print(f'Assignment.eval() : Variable {self.name} already defined = {space[self.name]}')
+            pass
         expr = self.expr
         if not hasattr(self.expr, 'value'):  # not a constant
             result = self.expr.eval(space)
@@ -211,7 +212,7 @@ class Assignment(Node):
             result = self.expr.value
             if type(result) is str and self.expr.name == 'INT': result = Int(result)
             elif type(result) is str and self.expr.name == 'FLOAT': result = float(result)
-        print(f'Assignment.eval() : "{self.name}" = {self.expr} = "{result}"')
+        # print(f'Assignment.eval() : "{self.name}" = {self.expr} = "{result}"')
         space[self.name] = result
         return result
 
@@ -230,21 +231,21 @@ class IfStmt(Node):
     # - only has condition and block
     def eval(self, space):
         result = self.condition.eval(space)
-        print(f'IfStmt.eval() : if condition -> {result}')
+        # print(f'IfStmt.eval() : if condition -> {result}')
         if result: return self.block.eval(space)   # IF
         elif self.elif_list:  #is not None         # ELIF
             for i,condition in enumerate(self.elif_list.conditions):  # lambda or map?
                 elif_cond_eval = condition.eval(space)
-                print(f'IfStmt.eval() : elif i={i} | {condition} | {condition.left} , {condition.right} -> {elif_cond_eval}')
+                # print(f'IfStmt.eval() : elif i={i} | {condition} | {condition.left} , {condition.right} -> {elif_cond_eval}')
                 if elif_cond_eval:
-                    print(f'IfStmt.eval() : elif index {i} ({condition}) -> True')
-                    print(f'- IfStmt.eval() : evaluating elif block {self.elif_list.blocks[i]}')
+                    # print(f'IfStmt.eval() : elif index {i} ({condition}) -> True')
+                    # print(f'- IfStmt.eval() : evaluating elif block {self.elif_list.blocks[i]}')
                     elif_output = self.elif_list.blocks[i].eval(space)
                     return elif_output
         if self.else_stmt is not None:           # ELSE
-            print(f'IfStmt.eval() : No true elif, evaluating else block ({self.else_stmt})')
+            # print(f'IfStmt.eval() : No true elif, evaluating else block ({self.else_stmt})')
             else_output = self.else_stmt.eval(space)
-            print(f'IfStmt.eval() : - else block eval returned {else_output}')
+            # print(f'IfStmt.eval() : - else block eval returned {else_output}')
             return else_output
         else: return None # Single if or if/elif with no else
 

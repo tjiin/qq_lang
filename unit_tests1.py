@@ -127,7 +127,6 @@ basic_if_statements = [
 ]
 
 
-
 class TestInterpreter(TestCase):
     def test_arithmetic_two_args(self):
         for m, p1 in two_arg_arithmetic:

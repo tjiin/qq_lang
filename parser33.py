@@ -3,7 +3,7 @@ from ast import *
 from lexer import *
 from pprint import *
 import warnings
-# warnings.filterwarnings('ignore')
+warnings.filterwarnings('ignore')
 
 
 pg = ParserGenerator(
@@ -56,7 +56,9 @@ def block_statement(state, p):
 
 @pg.production('statement : stmt $end')
 @pg.production('statement : stmt NEWLINE')
+@pg.production('statement : NEWLINE')
 @pg.production('statement : stmt ;')
+@pg.production('statement : expr $end')
 def statement(state, p):
     return p[0]
 
@@ -427,21 +429,22 @@ def error_handler(state, token):
 parser = pg.build()
 
 
-def parse(code, state=NameSpace('@main')):
-    result = parser.parse(lexer.lex(code), state)
+def parse(code, state=NameSpace('@main'), log=True):
+    result = parser.parse(lexer.lex(code), state, log)
     return result
 
 
 class Compile:  # yes I know, this name should be in scare quotes..
-    def __init__(self, code, space=None):
+    def __init__(self, code, space=None, details=True):
         self.code = code
         if space is None:
             self.namespace = NameSpace('@main')
         else:
             self.namespace = space
         self.tokens = [t for t in lexer.lex(code)]
-        pprint(self.tokens)
-        self.parser_output = parse(code, self.namespace)
+        if details:
+            pprint(self.tokens)
+        self.parser_output = parse(code, self.namespace, log=details)
         self.output = self.parser_output.eval(self.namespace)
 
     def __str__(self):
