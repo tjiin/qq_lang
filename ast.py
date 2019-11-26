@@ -61,10 +61,10 @@ class FunctionCall(Node):
         self.name = name.value
         self.parent_space = None
         self.args = arg_list.args if arg_list is not None else None
-        print(f'FunctionCall.init() of "{self.name}" : self.args = {arg_list.get_str() if self.args is not None else None}')
+        # print(f'FunctionCall.init() of "{self.name}" : self.args = {arg_list.get_str() if self.args is not None else None}')
 
     def eval(self, space):
-        print(f"FunctionCall : name, args = '{self.name}', {self.args}")
+        # print(f"FunctionCall : name, args = '{self.name}', {self.args}")
         if type(space) != NameSpace:
             raise Exception(f"FunctionCall Error: space is not type NameSpace in {self.name}")
         elif self.name not in space:
@@ -76,25 +76,25 @@ class FunctionCall(Node):
         if func_def.params is not None:
             if len(func_def.params) != len(self.args):
                 raise Exception(f"FunctionCall Error: '{self.name}' expected {len(func_def.params)} arguments"
-                                f"but got {len(self.args)}")
+                                f" but got {len(self.args)}")
             # evaluate arguments passed to the function
             arg_values = [arg.eval(self.parent_space) for arg in self.args]
-            print(f'FunctionCall evaluated args = {arg_values}')
+            # print(f'FunctionCall evaluated args = {arg_values}')
             # set parameters from function definition to evaluated argument values (in new namespace)
             func_space.add_items(zip(func_def.params, arg_values))
 
-        print(f"FunctionCall '{self.name}' space before eval : {func_space}")
+        # print(f"FunctionCall '{self.name}' space before eval : {func_space}")
         func_output = None
         if func_def.body is not None:
             func_output = func_def.body.eval(func_space)
-            print(f"FunctionCall.eval() '{self.name}' space after block eval : {func_space}")
+            # print(f"FunctionCall.eval() '{self.name}' space after block eval : {func_space}")
         if func_def.return_stmt is not None:
-            print(f"Return stmt of '{self.name}' : {func_def.return_stmt}")
+            # print(f"Return stmt of '{self.name}' : {func_def.return_stmt}")
             return_value = func_def.return_stmt.eval(func_space)
-            print(f"Return value of '{self.name}' in '{self.parent_space}' : {return_value}")
+            # print(f"Return value of '{self.name}' in '{self.parent_space}' : {return_value}")
             return return_value
         elif func_def.body is not None:  # no return but body, print line outputs for debug and return true
-            print(f"Line outputs '{self.name}' in '{self.parent_space}' : {func_output}")
+            # print(f"Line outputs '{self.name}' in '{self.parent_space}' : {func_output}")
             return True
 
 
@@ -102,13 +102,13 @@ class FunctionCall(Node):
 class FunctionDef(Node):
     def __init__(self, name, body=None, param_list=None, return_stmt=None):
         if body == return_stmt == param_list is None:
-            raise ValueError('FunctionDef needs at least body or return')
+            raise ValueError('     FunctionDef needs at least body or return')
         self.name = name.value
         self.body = body
         self.params = param_list.params if param_list is not None else None
-        print(f'FunctionDef.init() self.params = {self.params}')
+        print(f'    FunctionDef.init() self.params = {self.params}')
         self.return_stmt = return_stmt
-        print(f"FunctionDef.init() : return = {self.return_stmt}")
+        print(f"    FunctionDef.init() : return = {self.return_stmt}")
         self.space = None
 
     def eval(self, space):
@@ -119,7 +119,7 @@ class FunctionDef(Node):
 class ParamList(Node):
     def __init__(self, param):
         self.params = [param.value]
-        print(f'ParamList.init() self.params = {self.params}')
+        # print(f'ParamList.init() self.params = {self.params}')
 
     def append_param(self, param):
         if param.value in self.params:
@@ -136,7 +136,7 @@ class ParamList(Node):
 class ArgList(Node):
     def __init__(self, arg):
         self.args = [arg]  # no name or value used here as they can be expr that need eval
-        print(f'ArgList.init() self.args = {self.get_str()}')
+        # print(f'ArgList.init() self.args = {self.get_str()}')
 
     def append_arg(self, arg):
         self.args.append(arg)

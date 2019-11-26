@@ -3,7 +3,7 @@ from ast import *
 from lexer import *
 from pprint import *
 import warnings
-warnings.filterwarnings('ignore')
+#warnings.filterwarnings('ignore')
 
 
 pg = ParserGenerator(
@@ -11,8 +11,8 @@ pg = ParserGenerator(
     # 'STRING', 'BOOL', 'LSQR', 'RSQR', 'CARET', 'MOD',
     ['INT', 'FLOAT', ';', '(', ')', '{', '}',  ',',  'IF', 'THEN', 'ELSE', 'ELIF', ':', '?',
      'NEG', 'PLUS', 'MINUS', 'MUL', 'DIV', 'POW', 'LET', 'ID', '=', '==', '!=', 'WHILE',
-     'AND', 'OR', 'NOT', 'DEF', 'RETURN', '<', '>', '<=', '>=', 'TRUE', 'FALSE', '=>',
-     'NEWLINE', '$end'],
+     'AND', 'OR', 'NOT', 'DEF', 'RETURN', '<', '>', '<=', '>=', 'TRUE', 'FALSE', '=>', 'ARROW_ID',
+     '$end'],
     # List of precedence rules in ascending ORDER
     precedence=[
         ('left', ['DEF']),
@@ -55,17 +55,15 @@ def block_statement(state, p):
 
 
 @pg.production('statement : stmt $end')
-@pg.production('statement : stmt NEWLINE')
-@pg.production('statement : NEWLINE')
+# @pg.production('statement : stmt NEWLINE')
 @pg.production('statement : stmt ;')
-@pg.production('statement : expr $end')
 def statement(state, p):
     return p[0]
 
 
 # FunctionDef - arrow notation - no params
 # - implicit return
-@pg.production('stmt : ID ( ) => { block return }') 
+@pg.production('stmt : ID ( ) => { block return }')
 @pg.production('stmt : ID ( ) => block')
 @pg.production('stmt : ID ( ) => { block }')
 def arrow_def_no_params(state, p):
@@ -78,12 +76,12 @@ def arrow_def_no_params(state, p):
 
 
 # FunctionDef - arrow notation
-@pg.production('stmt : ID ( param_list ) => { block return }')
-@pg.production('stmt : ID ( param_list ) => stmt')
-@pg.production('stmt : ID ( param_list ) => { block }')
+@pg.production('stmt : ARROW_ID ( param_list ) => { block return }')
+@pg.production('stmt : ARROW_ID ( param_list ) => stmt')
+@pg.production('stmt : ARROW_ID ( param_list ) => { block }')
 def arrow_def_params(state, p):
     if len(p) == 6:
-        print('arrow no body param return')
+        #print('arrow no body param return')
         return FunctionDef(p[0], body=None, param_list=p[2], return_stmt=p[5])
     elif len(p) == 7:
         return FunctionDef(p[0], body=p[6], param_list=p[2], return_stmt=None)
@@ -91,7 +89,7 @@ def arrow_def_params(state, p):
         return FunctionDef(p[0], body=p[6], param_list=p[2], return_stmt=p[7])
     
 # FunctionDef - arrow notation, params but no block
-@pg.production('stmt : ID ( param_list ) => { return }')
+@pg.production('stmt : ARROW_ID ( param_list ) => { return }')
 def arrow_def_params_no_body_return(state, p):
     return FunctionDef(p[0], body=None, param_list=p[2], return_stmt=p[6])
 
@@ -127,17 +125,8 @@ def func_def_no_arg_no_block(state, p):
     return FunctionDef(p[1], return_stmt=p[5])
 
 
-# FunctionCall
-@pg.production('func_call : ID ( )')
-@pg.production('func_call : ID ( arg_list )')
-def func_call(state, p):
-    if len(p) == 3:
-        return FunctionCall(p[0])
-    else:
-        return FunctionCall(p[0], p[2])
-
-
 @pg.production('param_list : ID')
+@pg.production('param_list : ID ,')
 def single_param(state, p):
     a = ParamList(p[0])
     return a
@@ -153,23 +142,8 @@ def param_list(state, p):
     return a
 
 
-@pg.production('arg_list : expr')
-def single_arg(state, p):
-    a = ArgList(p[0])
-    return a
-
-
-@pg.production('arg_list : expr , arg_list')
-def arg_list(state, p):
-    if type(p[2]) is ArgList:
-        a = p[2]
-    else:
-        a = ArgList(p[2])
-    a.append_arg(p[0])
-    return a
-
-
 @pg.production('return : RETURN expr')
+@pg.production('return : RETURN expr ;')
 def return_stmt(state, p):
     return p[1]
 
@@ -202,10 +176,10 @@ def if_else_basic(state, p):
 @pg.production('stmt : IF expr { block } elif_list ELSE { block }', precedence='ELSE')
 def if_elif_else_block(state, p):
     if len(p) == 6:
-        print('NO ELSE')
+        # print('NO ELSE')
         return IfStmt(p[1], p[3], elif_list=p[5])
     else:
-        print('IF ELIF ELSE')
+        # print('IF ELIF ELSE')
         return IfStmt(p[1], p[3], elif_list=p[5], else_stmt=p[8])
 
 
@@ -214,12 +188,12 @@ def if_elif_else_block(state, p):
 @pg.production('stmt : IF expr THEN stmt elif_list ELSE stmt')
 def if_then_elif_else_(state, p):
     if len(p) == 5:
-        print('NO ELSE')
-        print(f'elif : {p[4]}')
-        print(f'elif : {p[4].blocks}')
+        # print('NO ELSE')
+        # print(f'elif : {p[4]}')
+        # print(f'elif : {p[4].blocks}')
         return IfStmt(p[1], p[3], elif_list=p[4], else_stmt=None)
     else:
-        print('IF ELIF ELSE')
+        # print('IF ELIF ELSE')
         return IfStmt(p[1], p[3], elif_list=p[4], else_stmt=p[6])
 
 
@@ -261,7 +235,7 @@ def assign_id(state, p):
     return Assignment(p[1], p[3])
 
 
-@pg.production('stmt : ID = expr')
+@pg.production('expr : ID = expr')
 # @pg.production('stmt : ID = expr = stmt ')
 def update_id(state, p):
     return Assignment(p[0], p[2])
@@ -277,10 +251,38 @@ def expr(state, p):
     return p[0]
 
 
-@pg.production('expr : func_call')
-def expr_func_call(state, p):
-    return p[0]
+@pg.production('arg_list : expr')
+@pg.production('arg_list : expr ,')
+def single_arg(state, p):
+    a = ArgList(p[0])
+    return a
 
+
+@pg.production('arg_list : expr , arg_list')
+def arg_list(state, p):
+    if type(p[2]) is ArgList:
+        a = p[2]
+    else:
+        a = ArgList(p[2])
+    a.append_arg(p[0])
+    return a
+
+
+@pg.production('expr : ID')
+def eval_identifier(state, p):
+    return Variable(p[0])
+
+
+# FunctionCall
+@pg.production('expr : ID ( )')
+@pg.production('expr : ID ( arg_list )')
+def func_call(state, p):
+    if p[-1].gettokentype() == ';':
+        print('YES ; at end')
+    if len(p) == 3:
+        return FunctionCall(p[0])
+    else:
+        return FunctionCall(p[0], p[2])
 
 
 """#@pg.production('expr : MINUS NEG ID')
@@ -296,11 +298,6 @@ def inc_dec_id(state, p):
 @pg.production('expr : NEG expr')
 def neg_expr(state, p):
     return FlipSign(p[1])
-
-
-@pg.production('expr : ID')
-def eval_identifier(state, p):
-    return Variable(p[0])
 
 
 @pg.production('expr : bool_expr')

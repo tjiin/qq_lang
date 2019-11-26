@@ -73,9 +73,15 @@ code1 = "let x = 25.2 ; if x > 0 then x = 1 elif x == 0 then x = 0 else x = -1"
 
 code1 = r"let y = 10 ; def f(y){ return(y*10) } ; f(y) \n "  # doesn't work
 code1 = r'def f(){ let x = 10.5 \n return(x*2) } \n f()' # works
-code1 = r'def f(){\nlet x = 10\nreturn(x) }\nf()'
+code1 = r'def f(){\nlet x = 10\nreturn(x) }\nf()' # unexpected newline
+# code1 = r'def f(){ \n let x = 10 \n return(x) } \n f()' # unexpected newline
 
+# code1 = r' let x = 10;\n\n let y = x+1' # works
 
+code1 = 'let x = 10; f(x,y)=>{return(x+y);}'
+code1 = "f(x)=>x+1 ; f(10) ; "
+
+code1 = 'let y = -3; f(x)=>x*x*-3; f(y);'
 
 """code1 = "let x=-10;if(x>0){x=1;}elif(x==0){x=0;}else{x=-1;}"
 code1 = "let x=-10;if x>0{x=1;}elif x==0{x=0;}else{x=-1;}"
@@ -107,5 +113,6 @@ code1 = "let x = 0; x++"""
 program = Compile(code1)
 space = program.namespace
 print(space)
+print(program.print_full())
 # print('-'*10)
 # program = Compile(code2, space=space)

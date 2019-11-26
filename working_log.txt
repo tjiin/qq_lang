@@ -172,9 +172,9 @@ IDEA: ('case1', '1+1', eval(self[-1])) ) => ('case1', '1+1', 2)
       so there's no good reason it can't be an expr, just assumed that rule was needed
 - realized in fixing sr/rr conflicts that arg_list object shouldn't be the same 
   for func call/def, oops..
-    - it worked but required uncessary handling, func_def should only be passed identifiers
+    - it worked but required unnecessary handling, func_def should only be passed identifiers
 - cleaned up function section of ast
-- fixed precedence rules, a bunch were unecessarry or wrong
+- fixed precedence rules, a bunch were unnecessary or wrong
     - order of operators for POW and NOT.. 
 - added ** to regex for pow, new arithmetic unittests using add/sub/mul/div
   that didn't work initally
@@ -189,6 +189,18 @@ IDEA: ('case1', '1+1', eval(self[-1])) ) => ('case1', '1+1', 2)
 - added if/elif/else
 - tried too many different syntax variations and it became a bit of a mess
   - can definitely see the appeal to having just one way to do something
-- mass renaming, FUNCTION IDENTIFIER LPAREN arg_list RIGHTPAREN    --->   DEF ID ( arg_list )
+- mass renaming, FUNCTION IDENTIFIER LPAREN arg_list RIGHTPAREN  --->  DEF ID ( arg_list )
 - the way if statements are defined is kind of messy, will probably change
 - looking at a lof of c++ and javascript syntax for ideas
+
+( 03:49:15 AM | Mon Nov 25 2019 )
+- been a while
+- quite busy lately and lacking motivation, felt like i was just adding the features a language
+  "should" have and basically building a slower python
+- finding Jelly and a few other random languages renewed some interest
+- can't remember exactly what was added since last entry
+- did a basic while loop but it's not very interesting
+- today wrote a simple interactive shell which revealed A LOT of bugs and how strict and
+  difficulty to understand the parsing of multiple lines is right now
+- added conditional expressions at some point (i.e. x = 10 ? 1 : -1)
+- did we have implicit return lambdas before? (i.e. f(x)=>{x*10})

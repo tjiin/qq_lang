@@ -10,9 +10,9 @@ two_arg_arithmetic = [
 compound_negatives = [
     ('double neg', '--2', 2), ('trip neg', '---2', -2), ('quad neg', '----2', 2),
     ('nested trip neg', '-(--(2))', -2), ('sub nested neg', '2--(-2)', 0),
-    ('new line single neg var', 'let x = -1 \\n -x*2', [None, 2]),
-    ('new line double neg var', 'let x = -1 \\n (--x)*2', [None, -2]),
-    ('new line double neg var', 'let x = -1 \\n --x*2', [None, 2])
+    ('new line single neg var', 'let x = -1 ; -x*2', [None, 2]),
+    ('new line double neg var', 'let x = -1 ; (--x)*2', [None, -2]),
+    ('new line double neg var', 'let x = -1 ; --x*2', [None, 2])
 ]
 
 harder_arithmetic = [
@@ -82,28 +82,28 @@ simple_var_assign = [
 ]
 
 new_line_expr = [
-    ('2 line add/sub', r'1+1 \n 10-2', [2, 8]),
-    ('2 line add/sub/mul/div', r' 2(-9.18/0.02) + 17 \n 1/2*(10-(-5)) ', [-901, 7.5]),
-    ('3 line arithmetic', r'-3*3 \n 84/2 \n 9+8-6*5', [-9, 42, -13]),
+    ('2 line add/sub', r'1+1 ; 10-2', [2, 8]),
+    ('2 line add/sub/mul/div', r' 2(-9.18/0.02) + 17 ; 1/2*(10-(-5)) ', [-901, 7.5]),
+    ('3 line arithmetic', r'-3*3 ; 84/2 ; 9+8-6*5', [-9, 42, -13]),
 ]
 
 new_line_var = [
-    ('2 line assign eval', r'let x = 10 \n x + 1', 'x', 11),
-    ('2 line neg assign eval', r'let x = -10 \n -x * -10', 'x', -100),
+    ('2 line assign eval', r'let x = 10 ; x + 1', 'x', 11),
+    ('2 line neg assign eval', r'let x = -10 ; -x * -10', 'x', -100),
 ]
 
 multi_line_vars = [
-    ('3 line 3 var assign/eval', r'let x = 10 \n let y = -1.5 \n let z = x * y + 3', 'z', -12.0)
+    ('3 line 3 var assign/eval', r'let x = 10 ; let y = -1.5 ; let z = x * y + 3', 'z', -12.0)
 ]
 
 basic_functions = [
-    ('func no arg no body return', r'def f(){ return(1+1) } \n f()', [None, 2]),
+    ('func no arg no body return', r'def f(){ return(1+1) } ; f()', [None, 2]),
     ('1 line func no arg no body return', r'def f(){ return(1+1) } ; f()', [None, 2]),
     ('func arg no body return', 'def f(x){ return(x*10) } ; f(2)', [None, 20]),
-    ('func no arg return', r'def f(){ let x = 10.5 \n return(x*2) } \n f()', [None, 21]),
-    ('func no body return', r'def f(a,b){ return((b/-3)+a*2) } \n f(10,6)', [None, 18]),
+    ('func no arg return', r'def f(){ let x = 10.5 ; return(x*2) } ; f()', [None, 21]),
+    ('func no body return', r'def f(a,b){ return((b/-3)+a*2) } ; f(10,6)', [None, 18]),
     ('1 line func arg body return', r'def f(a,b){ return((b/-3)+a*2) } ; f(10,6)', [None, 18]),
-    ('1 line func no-body return', r'def f(a,b){ return((b/-3)+a*2) } \n f(10,6)', [None, 18])
+    ('1 line func no-body return', r'def f(a,b){ return((b/-3)+a*2) } ; f(10,6)', [None, 18])
 ]
 
 function_expressions = [
@@ -113,8 +113,15 @@ function_expressions = [
      [None, None, False]),
     ('2 func bool comp expr (2)', "def f(a){return(a+1)} ; def g(a){return(a*10)} ; f(4)+1 == 7 or g(1)>9",
      [None, None, True]),
-    ('2 func nested arg expr', r'def f(a,b){ let c = (a+1)/(b - 1) \n return(c) } ; def g(x){return(x+1)} ; '
+    ('2 func nested arg expr', r'def f(a,b){ let c = (a+1)/(b - 1) ; return(c) } ; def g(x){return(x+1)} ; '
                                r' f( g(1), 7 ) + 2', [None, None, 2.5]),
+]
+
+first_class_functions = [
+    ('func passed as arg', 'f(g,x)=>{return(g(x))}; g(y)=>y*-10; f(g,2);',
+     [None, None, -20]),
+    ('func returned')
+
 ]
 
 basic_if_statements = [
@@ -214,6 +221,13 @@ class TestInterpreter(TestCase):
 
     def test_function_expressions(self):
         for m, p1, ans in function_expressions:
+            with self.subTest(msg=m, case=p1, expected=ans):
+                program = Compile(p1)
+                print('=' * 30 + '\n' + f'{p1} --> {program.output}' + '\n' + '=' * 30)
+                self.assertEqual(ans, program.output)
+
+    def test_first_class_functions(self):
+        for m, p1, ans in first_class_functions:
             with self.subTest(msg=m, case=p1, expected=ans):
                 program = Compile(p1)
                 print('=' * 30 + '\n' + f'{p1} --> {program.output}' + '\n' + '=' * 30)

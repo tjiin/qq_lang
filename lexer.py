@@ -23,7 +23,6 @@ lg.add('OR', r'\bor\b')
 lg.add('TRUE', r'\bTrue\b')
 lg.add('FALSE', r'\bFalse\b')
 lg.add('WHILE', r'\bwhile\b')
-lg.add('ID', r'[a-zA-Z_][a-zA-Z0-9_]*')
 lg.add(',', r'\,')
 lg.add(';', r'\;')
 lg.add(':', r':')
@@ -40,7 +39,16 @@ lg.add('POW', r'\^|\*{2}')
 lg.add('MUL', r'\*')
 lg.add('DIV', r'/')
 lg.add('=', r'=')
-lg.ignore(r'[^\S\t]+')
-lg.add('NEWLINE', r"\\n")
+#lg.add('ARROW_ID', r'[!][a-zA-Z0-9_]+')
+# letter or underscore follow by 0 or more letters/numbers/underscore
+# with  a positive lookahead for 0 or more letters inside ( ) followed by a =>
+lg.add('ARROW_ID', r'[a-zA-Z_][a-zA-Z0-9_]*(?=\([A-Za-z,]*\)=>)')
+lg.add('ID', r'[a-zA-Z_][a-zA-Z0-9_]*')
+# lg.add('NEWLINE', r"[\\n]+")
+# lg.add('NEWLINE', r"\\n")
+
+# ignore whitespace
+# lg.ignore(r'[^\S\t]+')
+lg.ignore('[ \nt\r\f\v]+')
 
 lexer = lg.build()
