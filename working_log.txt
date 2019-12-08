@@ -1,17 +1,4 @@
-
-[x]exponents
-- multiple lines
-- different variable declarations
-- functions
-- different data types
-
-- program structure, parsing, etc
-
-# DIGIT? or no point going to deeper level?
-# CHAR?
-
-TODO: Implicit multiplication kind of works but '(1) (2)' would be incorrectly parsed as multiplying...
-TODO: Handle assigning boolean expressions to variables
+TODO: ID += expr
 
 IDEA: ('case1', '1+1', eval(self[-1])) ) => ('case1', '1+1', 2)
 --> assigning element while declaring in relation to other elements
@@ -248,3 +235,19 @@ IDEA: ('case1', '1+1', eval(self[-1])) ) => ('case1', '1+1', 2)
     - realized the two for ELSE that have stuck around forever were due to 1 production rule
     - 'stmt : IF expr : expr ELSE expr' fixed it (used to have stmt inside which was ambiguous recursion)
 - parser33 and ast are both around 500 lines
+
+( 05:30:32 AM | Sun Dec 08 2019 )
+- working for last hour and a bit
+- housecleaning, deleted unused files, removed some comments and unused lines and renamed parser33 finally
+- added ++ and --
+- fixed namespace collision problem caused by lazy code in function call eval
+    - didn't check for shadowing when we add parent space variables to function call space
+- run_file use lead to finding a pretty serious (and obvious in retrospect) issue with all stmts..
+    - every stmt needs a semicolon at the end in order for the following code to be parsed
+    - this affects if, function calls, switches, etc
+    - e.g.  def f(x){ return x + 1 }
+            f(0);
+        - needs a semicolon after the } because newline and whitespace are ignored
+        - didn't really run into this until now because we were evaluating single lines in interpreter
+          which parse as stmt $end
+- need for multiple returns becoming more apparent, probly have to rewrite how they work

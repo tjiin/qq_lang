@@ -301,3 +301,41 @@ https://docs.python.org/3/reference/expressions.html#operator-precedence
 
 - does the if object have the block code and determine if it can be executed?
 - or do blocks have condition statements they evaluate?
+
+
+-----
+
+- namespace collision due to code that allowed recursion and closure
+    f(x) => x + 1;
+    let x = 10;
+    f(1) --> 11 not 2
+
+    - only add variables from parent space that aren't in func_def space
+
+- def f(x,i) {
+    if i == 0: return(x)
+    else:
+        i = i - 1;
+        x = x + 1;
+        f(x,i);
+}
+
+    - this doesn't work because parser always expects (a single) RETURN after the function block
+    - how do we handle this case? also have to deal with multiple returns at some point..
+
+- def f(x,i) {
+    if( i != 0 )
+    {
+        i = i - 1;
+        x = x + 1;
+        f(x,i);
+    } else {
+        return(x);
+    }
+}
+
+    - also doesn't work (unexpected RETURN)
+    - return is part of the block not after it
+
+- can we make it so returns are just block element statements that
+

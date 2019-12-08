@@ -3,7 +3,6 @@ from ast import *
 from lexer import *
 from pprint import *
 import warnings
-
 # warnings.filterwarnings('ignore')
 
 
@@ -13,7 +12,7 @@ pg = ParserGenerator(
     ['INT', 'FLOAT', ';', '(', ')', '{', '}', ',', 'IF', 'ELSE', 'ELIF', ':', '?',
      'NEG', 'PLUS', 'MINUS', 'MUL', 'DIV', 'POW', 'LET', 'ID', '=', '==', '!=', 'WHILE',
      'AND', 'OR', 'NOT', 'DEF', 'RETURN', '<', '>', '<=', '>=', 'TRUE', 'FALSE', '=>', 'ARROW_ID',
-     '<=>', 'SWITCH', 'CASE', 'DEFAULT', 'BREAK', '$end'],
+     '--', '++', '<=>', 'SWITCH', 'CASE', 'DEFAULT', 'BREAK', '$end'],
     # List of precedence rules in ascending ORDER
     precedence=[
         ('left', ['DEF']),
@@ -197,7 +196,6 @@ def elif_list(state, p):
 
 # ----- Switch ----- #
 
-#                         0   1     2        3    4    5    6
 @pg.production('stmt : SWITCH { case_list DEFAULT : block BREAK }')
 @pg.production('stmt : SWITCH { case_list DEFAULT : expr }')
 @pg.production('stmt : SWITCH { case_list }')
@@ -278,6 +276,16 @@ def update_id(state, p):
     return Assignment(p[0], p[2])
 
 
+# Can be done more efficiently
+@pg.production('expr : ID ++')
+@pg.production('expr : ID --')
+def inc_dec(state, p):
+    if p[1].gettokentype() == '++':
+        return Increment(p[0])
+    else:
+        return Decrement(p[0])
+
+
 @pg.production('stmt : WHILE ( bool_expr ) { block }')
 def while_loop(state, p):
     return WhileLoop(p[2], p[5])
@@ -320,16 +328,6 @@ def func_call(state, p):
         return FunctionCall(p[0])
     else:
         return FunctionCall(p[0], p[2])
-
-
-"""#@pg.production('expr : MINUS NEG ID')
-#@pg.production('expr : ID MINUS NEG')
-@pg.production('expr : + + ID')
-@pg.production('expr : ID + +')
-def inc_dec_id(state, p):
-    print( p[0].gettokentype() )
-    if p[0].gettokentype() == 'PLUS' or p[1].gettokentype() == 'PLUS':
-        Assignment(p[2], f'{p[0]} = {p[0]} PLUS 1')"""
 
 
 @pg.production('expr : NEG expr')

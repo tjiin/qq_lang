@@ -1,5 +1,5 @@
 from lexer import lexer
-from parser33 import parser
+from parser import parser
 from pprint import *
 
 

@@ -24,3 +24,13 @@ class ConditionalAssignment(Node):
             Assignment(self.identif, self.assign_true).eval(space)
         else:
             Assignment(self.identif, self.assign_false).eval(space)
+
+
+"""#@pg.production('expr : MINUS NEG ID')
+#@pg.production('expr : ID MINUS NEG')
+@pg.production('expr : + + ID')
+@pg.production('expr : ID + +')
+def inc_dec_id(state, p):
+    print( p[0].gettokentype() )
+    if p[0].gettokentype() == 'PLUS' or p[1].gettokentype() == 'PLUS':
+        Assignment(p[2], f'{p[0]} = {p[0]} PLUS 1')"""

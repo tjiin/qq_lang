@@ -1,4 +1,4 @@
-from parser33 import Compile
+from parser import Compile
 from pprint import *
 
 fn = 'test.qq'

@@ -1,6 +1,11 @@
 
-f(x) => x + 1;
+def f(x){ return x + 1 }
+f(0);
 
+
+
+
+/*
 
 switch f(-1.5) {
     case 2.5:
@@ -16,9 +21,6 @@ switch f(-1.5) {
         let x = 10;
         break
 }
-
-
-/*
 
 
 if   y < 0  : y = -10

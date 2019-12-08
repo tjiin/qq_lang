@@ -1,5 +1,5 @@
 from unittest import TestCase
-from parser33 import Compile
+from parser import Compile
 
 two_arg_arithmetic = [
     ('add 2 pos', '1 + 1'), ('sub 2 pos', '8 - 4'), ('mul 2 pos', '4 * 8',), ('div 2 pos', '12 / 3'),

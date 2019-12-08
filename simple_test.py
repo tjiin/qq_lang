@@ -1,4 +1,4 @@
-from parser33 import Compile
+from parser import Compile
 from pprint import *
 
 # code = '1 + 1'
