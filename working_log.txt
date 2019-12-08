@@ -201,6 +201,50 @@ IDEA: ('case1', '1+1', eval(self[-1])) ) => ('case1', '1+1', 2)
 - can't remember exactly what was added since last entry
 - did a basic while loop but it's not very interesting
 - today wrote a simple interactive shell which revealed A LOT of bugs and how strict and
-  difficulty to understand the parsing of multiple lines is right now
+  difficult to understand multiline parsing is right now
 - added conditional expressions at some point (i.e. x = 10 ? 1 : -1)
 - did we have implicit return lambdas before? (i.e. f(x)=>{x*10})
+
+( 03:16:45 AM | Wed Nov 27 2019 )
+- interpreter is much better and it helped fix a lot of parsing problems
+- realized the other night that the way functions are defined basically makes them first class
+  - really cool moment where i passed a function as an argument and it worked
+  - returning functions also works!
+  - added variables from parent scope at time of definition to function_call namespace
+    - this makes closure and recursion possible
+    - another really cool moment when i ran f(x)=>f(x) and the screen was instantly filled with
+      scrolling output until it hit python max recursion limit
+    - the way this is done now is pretty hacky and will have to change
+- arrow definition parsing was pretty broken and it took hours at bcit the other night to
+  realize that it's because there is no token before the arrow function id that would signify
+  it's not any other type of id
+- wrote a regex for ARROW_ID and that fixed it
+- x = y = f(2) works, same with f = g = return_a_function()
+- if statements still aren't very solid, not confident using them
+- still 4 shift/reduce warnings that have been around forever related to ELSE
+- hard to get out of recursion without if statements or multiple returns
+- oh yeah, NEWLINE is no longer a thing.. it's completely ignore by the lexer
+    - was way too buggy and difficult somehow
+
+( 09:03:45 PM | Sat Dec 07 2019 )
+- working for 5 hours or so
+- added "spaceship" operator (triple comparison) and comparison assignments
+    - e.g. let x = y <=> z ? -10 : 0 : 10
+- added elif_list and switch statements
+    - a lot easier than I thought it was.. was trying to copy the other "list" types without thinking
+    - if/elif/else can use : or { } depending on whether the block is an expression
+    - switch doesn't need a parent expression to compare cases to (can have case expressions)
+        - e.g. switch { case y > 0: ... case y < 0: ... default: .. }
+    - don't really understand why break is needed in c++/js/go, other than maybe cases
+      that share code or switches inside of switches, added it anyways for blocks
+    - try to add a block case without them
+- fixed arrow function regex to allow spaces
+    - didn't realize I couldn't do things like f( x, y ) => x+y
+    - had to make the regex a lot longer but it's pretty robust now
+- added comments to lexer ignore in the form /* possibly multiline comment */
+- added run_file.py, really nice actually writing code out with formatting
+    - only used unittests and interpreter up to this point
+- no more shift/reduce warnings!
+    - realized the two for ELSE that have stuck around forever were due to 1 production rule
+    - 'stmt : IF expr : expr ELSE expr' fixed it (used to have stmt inside which was ambiguous recursion)
+- parser33 and ast are both around 500 lines

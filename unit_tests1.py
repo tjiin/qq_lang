@@ -119,9 +119,8 @@ function_expressions = [
 
 first_class_functions = [
     ('func passed as arg', 'f(g,x)=>{return(g(x))}; g(y)=>y*-10; f(g,2);',
-     [None, None, -20]),
-    ('func returned')
-
+     -20),
+    ('func returned', 'f()=>{ g(x)=>x*-3; return(g); } ; h = f(); h(2);', -6),
 ]
 
 basic_if_statements = [
@@ -131,6 +130,12 @@ basic_if_statements = [
     (' if then else true', "let x = 25.2 ; if x > 0 then x = 1 else x = -1", 'x', 1),
     (' if: else', "let x = 25.2 ; if not False: x = 0", 'x', 0),
     (' if then elif then else', "let x = 25.2 ; if x < 0 then x = 0 elif x > 30 then x = 30 else x = 1", 'x', 1)
+]
+
+three_way_cmp = [
+    ('int - less', '0 <=> 1', -1),
+    ('int - equal', '1 <=> 1', 0),
+    ('int - greater', '1 <=> 0', 1),
 ]
 
 
@@ -231,7 +236,7 @@ class TestInterpreter(TestCase):
             with self.subTest(msg=m, case=p1, expected=ans):
                 program = Compile(p1)
                 print('=' * 30 + '\n' + f'{p1} --> {program.output}' + '\n' + '=' * 30)
-                self.assertEqual(ans, program.output)
+                self.assertEqual(ans, program.output[-1])
 
     def test_basic_if(self):
         for m, p1, var, ans in basic_if_statements:
@@ -239,3 +244,10 @@ class TestInterpreter(TestCase):
                 program = Compile(p1)
                 print('=' * 30 + '\n' + f'{p1} --> {program.output}' + '\n' + '=' * 30)
                 self.assertEqual(ans, program.namespace[var])
+
+    def test_three_way_cmp(self):
+        for m, p1, ans in three_way_cmp:
+            with self.subTest(msg=m, case=p1, expected=ans):
+                program = Compile(p1)
+                print('=' * 30 + '\n' + f'{p1} --> {program.output}' + '\n' + '=' * 30)
+                self.assertEqual(ans, program.output)

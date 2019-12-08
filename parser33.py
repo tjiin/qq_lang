@@ -3,16 +3,17 @@ from ast import *
 from lexer import *
 from pprint import *
 import warnings
-#warnings.filterwarnings('ignore')
+
+# warnings.filterwarnings('ignore')
 
 
 pg = ParserGenerator(
     # List of all token names accepted by the parser
     # 'STRING', 'BOOL', 'LSQR', 'RSQR', 'CARET', 'MOD',
-    ['INT', 'FLOAT', ';', '(', ')', '{', '}',  ',',  'IF', 'THEN', 'ELSE', 'ELIF', ':', '?',
+    ['INT', 'FLOAT', ';', '(', ')', '{', '}', ',', 'IF', 'ELSE', 'ELIF', ':', '?',
      'NEG', 'PLUS', 'MINUS', 'MUL', 'DIV', 'POW', 'LET', 'ID', '=', '==', '!=', 'WHILE',
      'AND', 'OR', 'NOT', 'DEF', 'RETURN', '<', '>', '<=', '>=', 'TRUE', 'FALSE', '=>', 'ARROW_ID',
-     '$end'],
+     '<=>', 'SWITCH', 'CASE', 'DEFAULT', 'BREAK', '$end'],
     # List of precedence rules in ascending ORDER
     precedence=[
         ('left', ['DEF']),
@@ -27,6 +28,7 @@ pg = ParserGenerator(
         ('left', ['WHILE']),
         ('left', [',']),
         ('left', ['<', '<=', '>', '>=', '!=', '==']),
+        ('left', ['<=>']),
         ('left', ['FLOAT', 'INT']),
         ('left', ['PLUS', 'MINUS']),
         ('left', ['NEG']),
@@ -55,17 +57,16 @@ def block_statement(state, p):
 
 
 @pg.production('statement : stmt $end')
-# @pg.production('statement : stmt NEWLINE')
 @pg.production('statement : stmt ;')
+# @pg.production('statement : stmt NEWLINE')
 def statement(state, p):
     return p[0]
 
 
-# FunctionDef - arrow notation - no params
-# - implicit return
-@pg.production('stmt : ID ( ) => { block return }')
-@pg.production('stmt : ID ( ) => block')
-@pg.production('stmt : ID ( ) => { block }')
+# FunctionDef - arrow, params, implicit return
+@pg.production('stmt : ARROW_ID ( ) => { block return }')
+@pg.production('stmt : ARROW_ID ( ) => { block }')
+@pg.production('stmt : ARROW_ID ( ) => block')
 def arrow_def_no_params(state, p):
     if len(p) == 5:
         return FunctionDef(p[0], body=None, param_list=None, return_stmt=p[4])
@@ -81,25 +82,26 @@ def arrow_def_no_params(state, p):
 @pg.production('stmt : ARROW_ID ( param_list ) => { block }')
 def arrow_def_params(state, p):
     if len(p) == 6:
-        #print('arrow no body param return')
         return FunctionDef(p[0], body=None, param_list=p[2], return_stmt=p[5])
     elif len(p) == 7:
         return FunctionDef(p[0], body=p[6], param_list=p[2], return_stmt=None)
     else:
         return FunctionDef(p[0], body=p[6], param_list=p[2], return_stmt=p[7])
-    
-# FunctionDef - arrow notation, params but no block
+
+
+# FunctionDef - arrow, params, no block
 @pg.production('stmt : ARROW_ID ( param_list ) => { return }')
 def arrow_def_params_no_body_return(state, p):
     return FunctionDef(p[0], body=None, param_list=p[2], return_stmt=p[6])
 
-# FunctionDef - params but no block
+
+# FunctionDef - params, no block
 @pg.production('stmt : DEF ID ( param_list ) { return }')
 def func_def_no_body(state, p):
     return FunctionDef(p[1], body=None, param_list=p[3], return_stmt=p[6])
 
 
-# FunctionDef - args     0  1       2      3 4    5     6   7      8
+# FunctionDef - params 0   1  2     3     4 5    6    7    8
 @pg.production('stmt : DEF ID ( param_list ) { block return }')
 @pg.production('stmt : DEF ID ( param_list ) { block }')
 def func_def(state, p):
@@ -109,7 +111,7 @@ def func_def(state, p):
         return FunctionDef(p[1], p[6], p[3], return_stmt=None)
 
 
-# FunctionDef - no args but block    1         2     3      4      5     6      7
+# FunctionDef - no params, block
 @pg.production('stmt : DEF ID ( ) { block return }')
 @pg.production('stmt : DEF ID ( ) { block }')
 def func_def_no_args(state, p):
@@ -119,7 +121,7 @@ def func_def_no_args(state, p):
         return FunctionDef(p[1], body=p[5])
 
 
-# FunctionDef - no args or block
+# FunctionDef - no args, no block
 @pg.production('stmt : DEF ID ( ) { return }')
 def func_def_no_arg_no_block(state, p):
     return FunctionDef(p[1], return_stmt=p[5])
@@ -142,83 +144,104 @@ def param_list(state, p):
     return a
 
 
-@pg.production('return : RETURN expr')
 @pg.production('return : RETURN expr ;')
+@pg.production('return : RETURN expr')
 def return_stmt(state, p):
     return p[1]
 
 
+# ----- IF / ELIF / ELSE ----- #
+
 @pg.production('stmt : IF expr : stmt')
 @pg.production('stmt : IF expr { block }')
-#@pg.production('stmt : IF expr THEN stmt')
 def if_then_stmt(state, p):
     if len(p) == 3:
         return IfStmt(p[1], p[2])
     else:
-        return IfStmt(p[1],p[3])
+        return IfStmt(p[1], p[3])
 
 
-@pg.production('stmt : IF expr { stmt } ELSE { stmt }')
 @pg.production('stmt : IF expr { block } ELSE { block }')
+@pg.production('stmt : IF expr { stmt } ELSE { stmt }')
 def if_else_block(state, p):
     return IfStmt(p[1], p[3], elif_list=None, else_stmt=p[7])
 
 
-@pg.production('stmt : IF expr THEN stmt ELSE stmt')
-@pg.production('stmt : IF expr : stmt ELSE stmt')
+@pg.production('stmt : IF expr : expr ELSE expr')
 def if_else_basic(state, p):
     return IfStmt(p[1], p[3], elif_list=None, else_stmt=p[5])
-    #return IfStmt(p[1], p[3], elif_list=None, else_stmt=p[6])
 
 
-                     # 0   1   2   3   4     5      6   7   8  9
-#@pg.production('stmt : IF expr { block } elif_list', precedence='ELSE') # no else
-@pg.production('stmt : IF expr { block } elif_list ELSE { block }', precedence='ELSE')
-def if_elif_else_block(state, p):
-    if len(p) == 6:
-        # print('NO ELSE')
-        return IfStmt(p[1], p[3], elif_list=p[5])
-    else:
-        # print('IF ELIF ELSE')
-        return IfStmt(p[1], p[3], elif_list=p[5], else_stmt=p[8])
+@pg.production('stmt : IF expr { block } elif_list ELSE { block }')
+def if_elif_else(state, p):
+    return IfStmt(p[1], p[3], elif_list=p[5], else_stmt=p[8])
 
 
-                     # 0   1    2    3       4       5   6
-@pg.production('stmt : IF expr THEN stmt elif_list')  # no else
-@pg.production('stmt : IF expr THEN stmt elif_list ELSE stmt')
-def if_then_elif_else_(state, p):
-    if len(p) == 5:
-        # print('NO ELSE')
-        # print(f'elif : {p[4]}')
-        # print(f'elif : {p[4].blocks}')
-        return IfStmt(p[1], p[3], elif_list=p[4], else_stmt=None)
-    else:
-        # print('IF ELIF ELSE')
-        return IfStmt(p[1], p[3], elif_list=p[4], else_stmt=p[6])
+@pg.production('stmt : IF expr : expr elif_list ELSE expr')
+def if_elif_else_colon(state, p):
+    return IfStmt(p[1], p[3], elif_list=p[4], else_stmt=p[6])
 
 
-@pg.production('elif_list : ELIF expr THEN stmt')
+@pg.production('elif_list : ELIF expr : expr')
 @pg.production('elif_list : ELIF expr { block }')
-def single_elif_case(state, p):
-    e = ElifCases(p[1], p[3])
+@pg.production('elif_list : elif_list ELIF expr : expr')
+@pg.production('elif_list : elif_list ELIF expr { block }')
+def elif_list(state, p):
+    if type(p[0]) is ElifCases:
+        e = p[0]
+        e.append_case(p[2], p[4])
+    else:
+        e = ElifCases(p[1], p[3])
     return e
 
 
-"""@pg.production('elif_list : elif_case')
-def single_elif_list(state, p):
-    return p[0]
+# ----- Switch ----- #
+
+#                         0   1     2        3    4    5    6
+@pg.production('stmt : SWITCH { case_list DEFAULT : block BREAK }')
+@pg.production('stmt : SWITCH { case_list DEFAULT : expr }')
+@pg.production('stmt : SWITCH { case_list }')
+def switch_no_expr(state, p):
+    if len(p) == 4:
+        return SwitchStatement(p[2])
+    else:
+        return SwitchStatement(p[2], default_block=p[5])
 
 
-@pg.production('elif_list : elif_case elif_list')
-def elif_list(state, p):
-   if type(p[1]) is ElifCases:
-       e = p[1]
-   else:
-       e = ElifCases(p[1], )
-   e.append_case(p[0], )
-   return e"""
+#                           0    1   2     3        4    5   6
+@pg.production('stmt : SWITCH expr { case_list DEFAULT : block BREAK }')
+@pg.production('stmt : SWITCH expr { case_list DEFAULT : expr }')
+@pg.production('stmt : SWITCH expr { case_list }')
+def switch(state, p):
+    if len(p) == 5:
+        return SwitchStatement(p[3], switch_expr=p[1])
+    else:
+        return SwitchStatement(p[3], switch_expr=p[1], default_block=p[6])
 
 
+@pg.production('case_list : case_list CASE expr : expr')
+@pg.production('case_list : CASE expr : expr')
+def case_list(state, p):
+    if type(p[0]) is CaseList:
+        c = p[0]
+        c.append_case(p[2], p[4])
+    else:
+        c = CaseList(p[1], p[3])
+    return c
+
+
+@pg.production('case_list : CASE expr : block BREAK')
+@pg.production('case_list : case_list CASE expr : block BREAK')
+def case_list_block(state, p):
+    if type(p[0]) is CaseList:
+        c = p[0]
+        c.append_case(p[2], p[4])
+    else:
+        c = CaseList(p[1], p[3])
+    return c
+
+
+# ----- Conditional / Comparison ----- #
 @pg.production('condt_stmt : bool_expr ? expr : expr')
 def condt_assign(state, p):
     return ConditionalExpression(p[0], p[2], p[4])
@@ -229,14 +252,28 @@ def condt_assign_stmt(state, p):
     return p[0]
 
 
-@pg.production('stmt : LET ID = expr')
+@pg.production('cmp_stmt : three_way_cmp ? expr : expr : expr')
+def cmp_condition(state, p):
+    return ComparisonStatement(p[0], p[2], p[4], p[6])
+
+
+@pg.production('stmt : cmp_stmt')
+def cmp_stmt(state, p):
+    return p[0]
+
+
+@pg.production('stmt : LET ID = cmp_stmt')
+def cmp_assign(state, p):
+    return Assignment(p[1], p[3])
+
+
 @pg.production('stmt : LET ID = condt_stmt')
+@pg.production('stmt : LET ID = expr')
 def assign_id(state, p):
     return Assignment(p[1], p[3])
 
 
 @pg.production('expr : ID = expr')
-# @pg.production('stmt : ID = expr = stmt ')
 def update_id(state, p):
     return Assignment(p[0], p[2])
 
@@ -300,6 +337,7 @@ def neg_expr(state, p):
     return FlipSign(p[1])
 
 
+@pg.production('expr : three_way_cmp')
 @pg.production('expr : bool_expr')
 @pg.production('expr : constant')
 @pg.production('constant : number')
@@ -338,6 +376,11 @@ def boolean_ops(state, p):
 @pg.production('bool_const : FALSE')
 def bool_literals(state, p):
     return TrueT if p[0].gettokentype() == 'TRUE' else FalseT
+
+
+@pg.production('three_way_cmp : expr <=> expr')
+def three_way_cmp(state, p):
+    return ThreeWayCmp(p[0], p[2])
 
 
 @pg.production('bool_expr : expr >= expr')

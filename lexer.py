@@ -8,8 +8,13 @@ lg.add('DEF', r'\bdef\b')
 lg.add('IF', r'\bif\b')
 lg.add('ELIF', r'\belif\b')
 lg.add('ELSE', r'\belse\b')
-lg.add('THEN', r'\bthen\b')
+lg.add('SWITCH', r'\bswitch\b')
+lg.add('CASE', r'\bcase\b')
+lg.add('DEFAULT', r'\bdefault\b')
+lg.add('BREAK', r'\bbreak\b')
+# lg.add('THEN', r'\bthen\b')
 lg.add('?', r'\?')
+lg.add('<=>', r'<=>')
 lg.add('<=', r'<=')
 lg.add('>=', r'>=')
 lg.add('<', r'<')
@@ -39,16 +44,13 @@ lg.add('POW', r'\^|\*{2}')
 lg.add('MUL', r'\*')
 lg.add('DIV', r'/')
 lg.add('=', r'=')
-#lg.add('ARROW_ID', r'[!][a-zA-Z0-9_]+')
-# letter or underscore follow by 0 or more letters/numbers/underscore
-# with  a positive lookahead for 0 or more letters inside ( ) followed by a =>
-lg.add('ARROW_ID', r'[a-zA-Z_][a-zA-Z0-9_]*(?=\([A-Za-z,]*\)=>)')
+lg.add('ARROW_ID', r'[a-zA-Z_][a-zA-Z0-9_]*(?=\([a-zA-Z\s]*((?<=[a-zA-Z\s]),[\s]*[a-zA-Z]+[\s]*)*\)[\s]*=>)')
 lg.add('ID', r'[a-zA-Z_][a-zA-Z0-9_]*')
-# lg.add('NEWLINE', r"[\\n]+")
-# lg.add('NEWLINE', r"\\n")
+
+# ignore /* comments */
+lg.ignore(r'\/\*([^*/\\]+(?=[\s\w\n\r]*))\*\/')
 
 # ignore whitespace
-# lg.ignore(r'[^\S\t]+')
-lg.ignore('[ \nt\r\f\v]+')
+lg.ignore('[ \nt\r\f\v]+')  # lg.ignore(r'[^\S\t]+')
 
 lexer = lg.build()

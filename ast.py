@@ -83,6 +83,15 @@ class FunctionCall(Node):
             # set parameters from function definition to evaluated argument values (in new namespace)
             func_space.add_items(zip(func_def.params, arg_values))
 
+        # add variables from FunctionDef space to FunctionCall space
+        # (closure)
+        defn_space = func_def.space
+        # defn_space_name = defn_space.name
+        # defn_space_vars = [x for x in defn_space]
+        func_space.add_items(defn_space.items())
+
+        print(f'    FunctionCall.eval() : func_space = {func_space}')
+
         # print(f"FunctionCall '{self.name}' space before eval : {func_space}")
         func_output = None
         if func_def.body is not None:
@@ -114,6 +123,7 @@ class FunctionDef(Node):
     def eval(self, space):
         self.space = space
         space[self.name] = self
+        # add variables from parent scope of definition to functionDef (closure)
 
 
 class ParamList(Node):
@@ -234,7 +244,7 @@ class IfStmt(Node):
         # print(f'IfStmt.eval() : if condition -> {result}')
         if result: return self.block.eval(space)   # IF
         elif self.elif_list:  #is not None         # ELIF
-            for i,condition in enumerate(self.elif_list.conditions):  # lambda or map?
+            for i, condition in enumerate(self.elif_list.conditions):  # lambda or map?
                 elif_cond_eval = condition.eval(space)
                 # print(f'IfStmt.eval() : elif i={i} | {condition} | {condition.left} , {condition.right} -> {elif_cond_eval}')
                 if elif_cond_eval:
@@ -247,7 +257,8 @@ class IfStmt(Node):
             else_output = self.else_stmt.eval(space)
             # print(f'IfStmt.eval() : - else block eval returned {else_output}')
             return else_output
-        else: return None # Single if or if/elif with no else
+
+        else: return None  # Single if or if/elif with no else
 
 
 class ElifCases(Node):
@@ -260,7 +271,10 @@ class ElifCases(Node):
         self.blocks.append(block)
 
     def eval(self, space):
-        pass
+        print('elif debug')
+        for cond, block in zip(self.conditions, self.blocks):
+            print(cond)
+            print(block)
 
     def __len__(self):
         return len(self.conditions)
@@ -274,10 +288,63 @@ class ConditionalExpression(Node):
 
     def eval(self, space):
         result = self.bool_stmt.eval(space)
-        if result:
-            return self.if_true_expr.eval(space)
+        return self.if_true_expr.eval(space) if result else self.if_false_expr.eval(space)
+
+
+class ComparisonStatement(Node):
+    def __init__(self, three_way_cmp, lt_expr, eq_expr, gt_expr):
+        self.three_way_cmp = three_way_cmp
+        self.lt_expr = lt_expr
+        self.eq_expr = eq_expr
+        self.gt_expr = gt_expr
+
+    def eval(self, space):
+        result = self.three_way_cmp.eval(space)
+        if not result:
+            return self.eq_expr.eval(space)
+        elif result < 0:
+            return self.lt_expr.eval(space)
         else:
-            return self.if_false_expr.eval(space)
+            return self.gt_expr.eval(space)
+
+
+class SwitchStatement(Node):
+    def __init__(self, case_list, switch_expr=None, default_block=None):
+        self.switch_expr = switch_expr
+        self.case_list = case_list
+        self.default_block = default_block
+
+    def eval(self, space):
+        exprs = self.case_list.expressions
+        blocks = self.case_list.blocks
+        switch_value = self.switch_expr.eval(space) if self.switch_expr else None
+        for i, (expr, block) in enumerate(zip(exprs, blocks)):
+            # print(f'{i} {expr} {block}')
+            if switch_value is None and expr.eval(space):   # e.g. switch { case y < 0: ... }
+                return block.eval(space)
+            elif switch_value == expr.eval(space):
+                return block.eval(space)
+        if self.default_block:
+            return self.default_block.eval(space)
+
+
+class CaseList(Node):
+    def __init__(self, expr, block):
+        self.expressions = [expr]
+        self.blocks = [block]
+
+    def append_case(self, expr, block):
+        self.expressions.append(expr)
+        self.blocks.append(block)
+
+    def eval(self, space):
+        print('case_list debug')
+        for cond, block in zip(self.expressions, self.blocks):
+            print(f'cond : {cond}')
+            print(f'block : {block}')
+
+    def __len__(self):
+        return len(self.expressions)
 
 
 class Float(Node):
@@ -324,6 +391,14 @@ class TrueT(Node):
 class FalseT(Node):
     def eval(self):
         return False
+
+
+class ThreeWayCmp(BinaryOp):
+    def eval(self, space):
+        left, right = self.left, self.right
+        left_eval = left.eval(space)
+        right_eval = right.eval(space)
+        return 0 if left_eval == right_eval else (left_eval < right_eval)*-2 + 1
 
 
 class LessThanEq(BinaryOp):

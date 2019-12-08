@@ -56,7 +56,7 @@ def main():
 				# print(f"- Ran '{code}'")
 				print(f'	{space.name} : ', end='')
 				pprint(space.space)
-				if output:
+				if output != '':
 					print(f'	{output}')
 			except Exception as e:
 				print('		---Error---')

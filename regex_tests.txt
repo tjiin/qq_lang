@@ -1,0 +1,48 @@
+
+##### ARROW FUNCTION PARAMETERS #####
+GOOD
+()
+(x)
+(x,y)
+(test)
+(test,num)
+(test,more,x)
+( x,y )
+( x, y)
+(x , y)
+( x , y )
+( test , num )
+( test , num, args )
+
+BAD
+(,)
+(x,)
+(x, )
+(x , )
+(x ,)
+(x,,y)
+(x,y,)
+(,x)
+(1)
+(1,test)
+(test,1)
+(_)
+(test , )
+( test , num ,)
+
+##### ARROW FUNCTIONS #####
+
+GOOD
+f(x)=>x+1
+f() => 2
+test(x,y)=>x+1
+test(x, y)=>x+1
+f( x )=>x+1
+f( x , y ) => x + 1
+f(x) => x+1
+func( test, num ) => x + 1
+
+BAD
+test( x,)=>
+f(x,,)=>
+func()
