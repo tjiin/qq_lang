@@ -251,3 +251,45 @@ IDEA: ('case1', '1+1', eval(self[-1])) ) => ('case1', '1+1', 2)
         - didn't really run into this until now because we were evaluating single lines in interpreter
           which parse as stmt $end
 - need for multiple returns becoming more apparent, probly have to rewrite how they work
+
+( 05:03:08 AM | Tue Dec 10 2019 )
+- working for 30 mins and maybe an hour or two yesterday
+- taking a break studying 1510 final
+- lots.of.issues
+- NEG is super broken at this point, think i'm giving up on that regex
+    - f(x-1) parses as a negative and fails..
+
+( 01:33:17 AM | Thu Dec 19 2019 )
+- probably 20-25 hours of work since last entry
+- lots has happened!
+    - finished exams, got a bunch of compiler and language books from library, back on the east shore
+- added functions that return function definitions
+    - e.g. (with closure) : f(x) => g(y) => x + y; let h = f(2); h(10);  -->  12
+    - different from returning the name/reference of a function, had to make FunctionDef eval return something
+- added variable assignment to a function definition (similar to above)
+    - e.g. let f = g(x) => x*2
+- fixed comment regex and added single line // form
+    - found a better regex online, the one I wrote broke under more complicated cases and lead to a really
+      confusing parsing error, took a while to realize what the problem was.. funny 'aha' moment
+    - nested comments work now as well
+- added functions that call themselves (different from recursion), more javascript inspiration
+    - e.g. ( f(x) => x + 1; )(-1.5)  -->  -0.5
+    - syntax isn't settled.. also anonymous functions would be nice with this
+- fixed the stmt semicolon issue!
+    - this was another parsing production rule issue that was a lot easier to solve than I thought
+    - tried a bunch of things that didn't work before realizing it just had to be "statement : ..."
+    - still a few stmt or expr rules that should be updated
+- fixed switch statements to not require break or extra semicolons
+- fixed x-1 NEG issue
+    - removed NEG and its regex altogether
+    - negative expr is now handled solely by parser like it always should've been
+    - removed double negatives for now (e.g. --2), but added --x decrement (and ++x increment)
+    - trying to handle both --x (as decrement) and --2 (as double negative) was actually really difficult
+      and frustrating, gave up eventually because double negatives don't really add anything to the language
+    - javascript and python each have one case but not both, which kind of makes sense now
+- rewrote a lot of the function call namespaces trying to fix recursive namespace issue
+    - added callstack and root_parent to FunctionCall and global namespace list
+    - still a bunch of namespace issues
+- spent a lot of time later in the morning of the previous entry trying to get the source code for tokens/ast classes
+    - some progress but not quite there
+- next goal is multiple return statements, think i know how to do it and once again it's not as hard as i thought

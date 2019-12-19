@@ -1,41 +1,32 @@
 
-def f(x){ return x + 1 }
-f(0);
+factorial(x) => {
+    switch (x) {
+        case 0:
+            let ret = 1;
+        default:
+            let ret = x*factorial(x-1);
+    }
+    return ret;
+}
 
-
+factorial(10);
 
 
 /*
+( func(x) => x + 1; )(0)
+2 + func(1);
 
-switch f(-1.5) {
-    case 2.5:
-        let y = 2.5;
-        let x = y;
-        break
-    case 0:
-        let y = 0;
-        let x = y;
-        break
-    default:
-        let y = -10;
-        let x = 10;
-        break
-}
+let f = g(x) => x*2;
+f(-1);
 
+f() => {let x = 2; return x}
+f();
 
-if   y < 0  : y = -10
-elif y == 0 : y = False
-elif y == 1 : y = True
-else y = 10
-
-
-if( y < 0 ) {
-    y = -10;
-} elif( y == 0 ) {
-    y = False;
-} elif ( y == 1 ) {
-    y = True;
-} else {
-    y = 10;
-}
+def f() {
+    y = 7;
+    return(x + 1);
+};
+let x = 2;
+f();
+x + 2;
 */

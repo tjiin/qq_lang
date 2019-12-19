@@ -10,7 +10,7 @@ pg = ParserGenerator(
     # List of all token names accepted by the parser
     # 'STRING', 'BOOL', 'LSQR', 'RSQR', 'CARET', 'MOD',
     ['INT', 'FLOAT', ';', '(', ')', '{', '}', ',', 'IF', 'ELSE', 'ELIF', ':', '?',
-     'NEG', 'PLUS', 'MINUS', 'MUL', 'DIV', 'POW', 'LET', 'ID', '=', '==', '!=', 'WHILE',
+     '+', '-', 'MUL', 'DIV', 'POW', 'LET', 'ID', '=', '==', '!=', 'WHILE',
      'AND', 'OR', 'NOT', 'DEF', 'RETURN', '<', '>', '<=', '>=', 'TRUE', 'FALSE', '=>', 'ARROW_ID',
      '--', '++', '<=>', 'SWITCH', 'CASE', 'DEFAULT', 'BREAK', '$end'],
     # List of precedence rules in ascending ORDER
@@ -29,8 +29,7 @@ pg = ParserGenerator(
         ('left', ['<', '<=', '>', '>=', '!=', '==']),
         ('left', ['<=>']),
         ('left', ['FLOAT', 'INT']),
-        ('left', ['PLUS', 'MINUS']),
-        ('left', ['NEG']),
+        ('left', ['+', '-']),
         ('left', ['MUL', 'DIV']),
         ('right', ['POW']),
     ]  # cache_IDENTIFIER='pg_cache1'
@@ -62,10 +61,15 @@ def statement(state, p):
     return p[0]
 
 
+@pg.production('statement : func_def')
+def func_def(state, p):
+    return p[0]
+
+
 # FunctionDef - arrow, params, implicit return
-@pg.production('stmt : ARROW_ID ( ) => { block return }')
-@pg.production('stmt : ARROW_ID ( ) => { block }')
-@pg.production('stmt : ARROW_ID ( ) => block')
+@pg.production('func_def : ARROW_ID ( ) => { block return }')
+@pg.production('func_def : ARROW_ID ( ) => { block }')
+@pg.production('func_def : ARROW_ID ( ) => statement')
 def arrow_def_no_params(state, p):
     if len(p) == 5:
         return FunctionDef(p[0], body=None, param_list=None, return_stmt=p[4])
@@ -76,9 +80,9 @@ def arrow_def_no_params(state, p):
 
 
 # FunctionDef - arrow notation
-@pg.production('stmt : ARROW_ID ( param_list ) => { block return }')
-@pg.production('stmt : ARROW_ID ( param_list ) => stmt')
-@pg.production('stmt : ARROW_ID ( param_list ) => { block }')
+@pg.production('func_def : ARROW_ID ( param_list ) => { block return }')
+@pg.production('func_def : ARROW_ID ( param_list ) => { block }')
+@pg.production('func_def : ARROW_ID ( param_list ) => statement')
 def arrow_def_params(state, p):
     if len(p) == 6:
         return FunctionDef(p[0], body=None, param_list=p[2], return_stmt=p[5])
@@ -89,20 +93,20 @@ def arrow_def_params(state, p):
 
 
 # FunctionDef - arrow, params, no block
-@pg.production('stmt : ARROW_ID ( param_list ) => { return }')
+@pg.production('func_def : ARROW_ID ( param_list ) => { return }')
 def arrow_def_params_no_body_return(state, p):
     return FunctionDef(p[0], body=None, param_list=p[2], return_stmt=p[6])
 
 
 # FunctionDef - params, no block
-@pg.production('stmt : DEF ID ( param_list ) { return }')
+@pg.production('func_def : DEF ID ( param_list ) { return }')
 def func_def_no_body(state, p):
     return FunctionDef(p[1], body=None, param_list=p[3], return_stmt=p[6])
 
 
 # FunctionDef - params 0   1  2     3     4 5    6    7    8
-@pg.production('stmt : DEF ID ( param_list ) { block return }')
-@pg.production('stmt : DEF ID ( param_list ) { block }')
+@pg.production('func_def : DEF ID ( param_list ) { block return }')
+@pg.production('func_def : DEF ID ( param_list ) { block }')
 def func_def(state, p):
     if len(p) == 9:
         return FunctionDef(p[1], p[6], p[3], p[7])
@@ -111,8 +115,8 @@ def func_def(state, p):
 
 
 # FunctionDef - no params, block
-@pg.production('stmt : DEF ID ( ) { block return }')
-@pg.production('stmt : DEF ID ( ) { block }')
+@pg.production('func_def : DEF ID ( ) { block return }')
+@pg.production('func_def : DEF ID ( ) { block }')
 def func_def_no_args(state, p):
     if len(p) == 8:
         return FunctionDef(p[1], body=p[5], param_list=None, return_stmt=p[6])
@@ -121,7 +125,7 @@ def func_def_no_args(state, p):
 
 
 # FunctionDef - no args, no block
-@pg.production('stmt : DEF ID ( ) { return }')
+@pg.production('func_def : DEF ID ( ) { return }')
 def func_def_no_arg_no_block(state, p):
     return FunctionDef(p[1], return_stmt=p[5])
 
@@ -150,9 +154,8 @@ def return_stmt(state, p):
 
 
 # ----- IF / ELIF / ELSE ----- #
-
-@pg.production('stmt : IF expr : stmt')
-@pg.production('stmt : IF expr { block }')
+@pg.production('statement : IF expr : statement')
+@pg.production('statement : IF expr { block }')
 def if_then_stmt(state, p):
     if len(p) == 3:
         return IfStmt(p[1], p[2])
@@ -160,8 +163,8 @@ def if_then_stmt(state, p):
         return IfStmt(p[1], p[3])
 
 
-@pg.production('stmt : IF expr { block } ELSE { block }')
-@pg.production('stmt : IF expr { stmt } ELSE { stmt }')
+@pg.production('statement : IF expr { block } ELSE { block }')
+@pg.production('statement : IF expr { stmt } ELSE { stmt }')
 def if_else_block(state, p):
     return IfStmt(p[1], p[3], elif_list=None, else_stmt=p[7])
 
@@ -195,10 +198,9 @@ def elif_list(state, p):
 
 
 # ----- Switch ----- #
-
-@pg.production('stmt : SWITCH { case_list DEFAULT : block BREAK }')
-@pg.production('stmt : SWITCH { case_list DEFAULT : expr }')
-@pg.production('stmt : SWITCH { case_list }')
+@pg.production('statement : SWITCH { case_list DEFAULT : block BREAK }')
+@pg.production('statement : SWITCH { case_list DEFAULT : stmt }')
+@pg.production('statement : SWITCH { case_list }')
 def switch_no_expr(state, p):
     if len(p) == 4:
         return SwitchStatement(p[2])
@@ -207,9 +209,9 @@ def switch_no_expr(state, p):
 
 
 #                           0    1   2     3        4    5   6
-@pg.production('stmt : SWITCH expr { case_list DEFAULT : block BREAK }')
-@pg.production('stmt : SWITCH expr { case_list DEFAULT : expr }')
-@pg.production('stmt : SWITCH expr { case_list }')
+@pg.production('statement : SWITCH expr { case_list DEFAULT : block BREAK }')
+@pg.production('statement : SWITCH expr { case_list DEFAULT : statement }')
+@pg.production('statement : SWITCH expr { case_list }')
 def switch(state, p):
     if len(p) == 5:
         return SwitchStatement(p[3], switch_expr=p[1])
@@ -217,8 +219,8 @@ def switch(state, p):
         return SwitchStatement(p[3], switch_expr=p[1], default_block=p[6])
 
 
-@pg.production('case_list : case_list CASE expr : expr')
-@pg.production('case_list : CASE expr : expr')
+@pg.production('case_list : case_list CASE expr : statement')
+@pg.production('case_list : CASE expr : statement')
 def case_list(state, p):
     if type(p[0]) is CaseList:
         c = p[0]
@@ -241,12 +243,17 @@ def case_list_block(state, p):
 
 # ----- Conditional / Comparison ----- #
 @pg.production('condt_stmt : bool_expr ? expr : expr')
-def condt_assign(state, p):
+def ternary_op(state, p):
     return ConditionalExpression(p[0], p[2], p[4])
 
 
+@pg.production('condt_stmt : ID ? expr : expr')
+def ternary_id_eval(state, p):
+    return ConditionalExpression(Variable(p[0]), p[2], p[4])
+
+
 @pg.production('stmt : condt_stmt')
-def condt_assign_stmt(state, p):
+def condt_stmt(state, p):
     return p[0]
 
 
@@ -260,6 +267,7 @@ def cmp_stmt(state, p):
     return p[0]
 
 
+# ----- Variable Assignment ----- #
 @pg.production('stmt : LET ID = cmp_stmt')
 def cmp_assign(state, p):
     return Assignment(p[1], p[3])
@@ -267,23 +275,34 @@ def cmp_assign(state, p):
 
 @pg.production('stmt : LET ID = condt_stmt')
 @pg.production('stmt : LET ID = expr')
+@pg.production('statement : LET ID = func_def')  # syntax/use of statement here?
 def assign_id(state, p):
     return Assignment(p[1], p[3])
 
 
 @pg.production('expr : ID = expr')
 def update_id(state, p):
-    return Assignment(p[0], p[2])
+    return Assignment(p[0], p[2], reassign=True)
 
 
+# ----- Increment/Decrement ----- #
 # Can be done more efficiently
 @pg.production('expr : ID ++')
-@pg.production('expr : ID --')
-def inc_dec(state, p):
-    if p[1].gettokentype() == '++':
+@pg.production('expr : ++ ID')
+def increment(state, p):
+    if p[0].gettokentype() == 'ID':
         return Increment(p[0])
     else:
+        return Increment(p[1])
+
+
+@pg.production('expr : ID --')
+@pg.production('expr : -- ID')
+def decrement(state, p):
+    if p[0].gettokentype() == 'ID':
         return Decrement(p[0])
+    else:
+        return Decrement(p[1])
 
 
 @pg.production('stmt : WHILE ( bool_expr ) { block }')
@@ -322,15 +341,26 @@ def eval_identifier(state, p):
 @pg.production('expr : ID ( )')
 @pg.production('expr : ID ( arg_list )')
 def func_call(state, p):
-    if p[-1].gettokentype() == ';':
-        print('YES ; at end')
+    for t in p:
+        print(dir(t))
     if len(p) == 3:
         return FunctionCall(p[0])
     else:
         return FunctionCall(p[0], p[2])
 
 
-@pg.production('expr : NEG expr')
+# FunctionCall - self-calling function
+@pg.production('statement : ( func_def ) ( )')
+@pg.production('statement : ( func_def ) ( arg_list )')
+def self_calling_func(state, p):
+    p[1].eval(state)  # the function definition was never evaluated in this production case
+    if len(p) == 5:
+        return FunctionCall(p[1])
+    else:
+        return FunctionCall(p[1], p[4])
+
+
+@pg.production('expr : - expr')
 def neg_expr(state, p):
     return FlipSign(p[1])
 
@@ -347,6 +377,17 @@ def constant(state, p):
 @pg.production('expr : ( expr )')
 def paren_expr(state, p):
     return p[1]
+
+
+@pg.production('three_way_cmp : expr <=> expr')
+def three_way_cmp(state, p):
+    return ThreeWayCmp(p[0], p[2])
+
+
+@pg.production('bool_const : TRUE')
+@pg.production('bool_const : FALSE')
+def bool_literals(state, p):
+    return TrueT if p[0].gettokentype() == 'TRUE' else FalseT
 
 
 @pg.production('bool_expr : expr != expr')
@@ -368,17 +409,6 @@ def boolean_ops(state, p):
         return And(p[0], p[2])
     else:
         return Or(p[0], p[2])
-
-
-@pg.production('bool_const : TRUE')
-@pg.production('bool_const : FALSE')
-def bool_literals(state, p):
-    return TrueT if p[0].gettokentype() == 'TRUE' else FalseT
-
-
-@pg.production('three_way_cmp : expr <=> expr')
-def three_way_cmp(state, p):
-    return ThreeWayCmp(p[0], p[2])
 
 
 @pg.production('bool_expr : expr >= expr')
@@ -412,17 +442,17 @@ def eval_number(state, p):
 
 
 @pg.production('expr : expr POW expr')
-@pg.production('expr : expr PLUS expr')
-@pg.production('expr : expr MINUS expr')
+@pg.production('expr : expr + expr')
+@pg.production('expr : expr - expr')
 @pg.production('expr : expr MUL expr')
 @pg.production('expr : expr DIV expr')
 def binary_op_expr(state, p):
     left = p[0]
     right = p[2]
     t = p[1].gettokentype()
-    if t == 'PLUS':
+    if t == '+':
         return Add(left, right)
-    elif t == 'MINUS':
+    elif t == '-':
         return Sub(left, right)
     elif t == 'MUL':
         return Mul(left, right)
@@ -482,7 +512,21 @@ class Compile:  # yes I know, this name should be in scare quotes..
         self.tokens = [t for t in lexer.lex(code)]
         if details:
             pprint(self.tokens)
+        for t in self.tokens:
+            pass
+            # print(f'{t}     -->     "{t.getstr()}"')
+            # print('-'*10)
+            # print(dir(t))
+            # print(t.source_pos)
+            # print(t.value)
+            # print(t.getstr())
         self.parser_output = parse(code, self.namespace, log=details)
+        for x in self.parser_output:
+            pass
+            # print(f'get_repr() of {x} --> {x.get_repr()}')
+            # print(f'{x} \n', '-'*20)
+            # pprint(dir(x))
+            # print('-'*20)
         self.output = self.parser_output.eval(self.namespace)
 
     def __str__(self):

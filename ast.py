@@ -6,10 +6,23 @@ class Node(BaseBox):
     pass
 
 
+def print_all_namespaces():
+    for name, obj in NameSpace.all_namespaces.items():
+        print('\t'*2 + f'{name}')
+        for k, v in obj.space.items():
+            print('\t'*4 + f'{k} : {v}')
+
+
 class NameSpace:
+
+    all_namespaces = {}
+
     def __init__(self, name):
+        if name is None:
+            raise Exception(f'NameSpace Error: __init__ called with name = None')
         self.name = name
         self.space = {}
+        NameSpace.all_namespaces[self.name] = self
 
     def __contains__(self, item):
         return item in self.space.keys()
@@ -21,18 +34,28 @@ class NameSpace:
             raise Exception(f'NameSpace Error: {item} is Undefined in NameSpace {self.name}')
 
     def __setitem__(self, key, value):
-        self.space[key] = value
+        if value is None:
+            raise Exception(f'NameSpace Error: Assigning {key} to None')
+        else:
+            self.space[key] = value
 
     def __str__(self):
         return f"NameSpace '{self.name}' = {self.space}"
 
     def items(self):
-        return [x for x in self.space.items()]
+        # dict keys have to be unique so this is safe (?)
+        # used with set operators like & and -
+        return set(self.space.items())
+        # return list(self.space.items())
 
     def add_items(self, items):
         # items is a list of key,val tuples, not checking if keys are unique
+        # raise Warning(f'NameSpace Warning: {k} is already defined in {self.name} ({k} = {v})')
         for k, v in items:
-            self.space[k] = v
+            if v is None:
+                raise Exception(f'NameSpace Error: Assigning {k} to None')
+            else:
+                self.space[k] = v
 
 
 class Block(Node):
@@ -55,49 +78,110 @@ class Block(Node):
         # print(f'--- Block.eval() output = {results}\n')
         return results
 
+    def get_repr(self):
+        r = ''
+        for s in self.statements:
+            if hasattr(s, 'get_repr'):
+                r += s.get_repr()
+            elif hasattr(s, '__str__'):
+                r += str(s)
+            else:
+                r += s
+
+    def __iter__(self):
+        return iter(self.statements)
+
 
 class FunctionCall(Node):
-    def __init__(self, name, arg_list=None):
-        self.name = name.value
+    call_stack = ['@main']
+
+    def __init__(self, func, arg_list=None):
+        if isinstance(func, FunctionDef):
+            self.name = func.name   # FunctionDef object
+        else:
+            self.name = func.value  # ID, str name
         self.parent_space = None
-        self.args = arg_list.args if arg_list is not None else None
+        self.args = arg_list.args if arg_list else None  # safe?
+        self.root_parent = None  # highest level parent caller (usually @main)
 
     def eval(self, space):
-        print(f"FunctionCall : name, args = '{self.name}', {self.args}")
+        FunctionCall.call_stack.append(self.name)
+        print('Call Stack : ', FunctionCall.call_stack)
+        # print(f"FunctionCall : name, args = '{self.name}', {self.args}")
         if type(space) != NameSpace:
             raise Exception(f"\tFunctionCall Error: space is not type NameSpace in {self.name}")
         elif self.name not in space:
             raise Exception(f"\tNameSpace Error: function '{self.name}' is undefined in '{self.parent_space}'")
         self.parent_space = space
-        namespace_id = f'{self.name}{self.parent_space.name}({id(self)})'
-        func_space = NameSpace(namespace_id)
+        print(f'test parent of {self.name} is', FunctionCall.call_stack[-2])
+
+        if self.root_parent is None:
+            self.root_parent = space.name
+            print(f'Root Parent of {self.name} is {self.root_parent}')
+
+        # BUGGY, probably has issues
+        # top_parent_caller is e.g. @main, recurse@main
+        # parent_space.name is e.g. @main, recurse@main
+        # self.name = recurse
+        # one case is when the parent caller is the highest parent (e.g. @main)
+        # other case is when parent caller has same name (recursion)
+        parent_name_split = self.parent_space.name.split(self.root_parent)[0]
+        # if self.parent_space.name == self.root_parent or self.name == parent_name_split:
+        if self.name == parent_name_split:
+            namespace_id = self.parent_space.name
+        else:
+            namespace_id = f'{self.name}{self.parent_space.name}({id(self)})'
+
+        print(f'NameSpace ID: {namespace_id}')
+        if namespace_id in NameSpace.all_namespaces:
+            func_space = NameSpace.all_namespaces[namespace_id]
+        else:
+            func_space = NameSpace(namespace_id)
+            print(f'Created new NameSpace {func_space.name}')
+
+        # pprint(NameSpace.all_namespaces)
+        # print(len(NameSpace.all_namespaces))
         func_def = self.parent_space[self.name]
-        if func_def.params is not None:
-            if len(func_def.params) != len(self.args):
-                raise Exception(f"\tFunctionCall Error: '{self.name}' expected {len(func_def.params)} arguments"
-                                f" but got {len(self.args)}")
+        print(self.parent_space)
+        print(f'func_def = {func_def}')
+        num_args_expected = 0 if func_def.params is None else len(func_def.params)
+        num_args_received = 0 if self.args is None else len(self.args)
+        if num_args_expected != num_args_received:
+            raise Exception(f"\tFunctionCall Error: '{self.name}' expected {num_args_expected} arguments"
+                            f" but got {num_args_received}")
+        elif self.args is not None and func_def.params is not None:
             # evaluate arguments passed to the function
             arg_values = [arg.eval(self.parent_space) for arg in self.args]
-            # print(f'FunctionCall evaluated args = {arg_values}')
             # set parameters from function definition to evaluated argument values (in new namespace)
             func_space.add_items(zip(func_def.params, arg_values))
 
+            # print(f'FunctionCall evaluated args = {arg_values}')
+
         # add variables from FunctionDef space to FunctionCall space (closures and recursion)
         unshadowed_vars = [(k, v) for k, v in func_def.space.items() if k not in func_space]
-        func_space.add_items(unshadowed_vars)
+        func_space.add_items(unshadowed_vars)  # unshadowed_vars = func_space.items() - func_def.space.items()
 
-        print(f'\tFunctionCall.eval() : func_space = {func_space}')
+        # evaluate function body if not None (assign variables, declare functions, etc)
+        if func_def.body:
+            func_def.body.eval(func_space)
 
-        # print(f"FunctionCall '{self.name}' space before eval : {func_space}")
+        # print(f'\tFunctionCall space before eval : {func_space}')
+
+        return_value = None  # default
+        # if return stmt then return its eval result
         if func_def.return_stmt is not None:
-            # print(f"Return stmt of '{self.name}' : {func_def.return_stmt}")
             return_value = func_def.return_stmt.eval(func_space)
-            # print(f"Return value of '{self.name}' in '{self.parent_space}' : {return_value}")
-            return return_value
-        elif func_def.body is not None:  # no return but body, print line outputs for debug and return true
-            # func_output = func_def.body.eval(func_space)
-            # print(f"Line outputs '{self.name}' in '{self.parent_space}' : {func_output}")
-            return True
+
+        print('-'*20)
+        print(f'GLOBAL NAMESPACE after function "{self.name}" : ')
+        print_all_namespaces()
+        print('-' * 20)
+
+        FunctionCall.call_stack.pop()
+
+        return return_value
+
+    # def get_repr(self):
 
 
 # body, param_list and return_stmt can each be None but at least body OR return are needed
@@ -110,12 +194,13 @@ class FunctionDef(Node):
         self.params = param_list.params if param_list is not None else None
         print(f'\tFunctionDef.init() self.params = {self.params}')
         self.return_stmt = return_stmt
-        print(f"\tFunctionDef.init() : return = {self.return_stmt}")
+        print(f'\tFunctionDef.init() : return = {self.return_stmt}')
         self.space = None
 
     def eval(self, space):
         self.space = space
         space[self.name] = self
+        return self  # if we want to return a function def
 
 
 class ParamList(Node):
@@ -188,6 +273,9 @@ class Identifier(Node):
             raise Exception(f"NameSpace Error: Identifier {self.name} is undefined in '{space.name}'")
         return space[self.name]
 
+    def get_repr(self):
+        return self.name
+
 
 class Variable(Node):
     def __init__(self, name):
@@ -199,17 +287,20 @@ class Variable(Node):
             raise Exception(f"NameSpace Error: Variable '{self.name}' undefined in '{space.name}'")
         return space[self.name]  # .eval() ?
 
+    def get_repr(self):
+        return self.name
+
 
 class Assignment(Node):
-    def __init__(self, name, expr):
+    def __init__(self, name, expr, reassign=False):
         # print(f'Assignment.init() : name = {name.value} | expr = {expr}')
         self.name = name.value
         self.expr = expr
+        self.reassign = reassign
 
     def eval(self, space):
-        if self.name in space:
-            # print(f'Assignment.eval() : Variable {self.name} already defined = {space[self.name]}')
-            pass
+        if self.reassign and self.name not in space:
+            raise Exception(f'Assignment Error: Reassigning undeclared variable "{self.name}"')
         if not hasattr(self.expr, 'value'):  # not a constant
             result = self.expr.eval(space)
         else:
@@ -351,6 +442,7 @@ class Increment(Node):
         if self.name not in space:
             raise Exception(f"\tNameSpace Error: variable '{self.name}' is undefined in '{space}'")
         space[self.name] += 1
+        return space[self.name]
 
 
 class Decrement(Node):
@@ -361,6 +453,7 @@ class Decrement(Node):
         if self.name not in space:
             raise Exception(f"\tNameSpace Error: variable '{self.name}' is undefined in '{space}'")
         space[self.name] -= 1
+        return space[self.name]
 
 
 class Float(Node):
@@ -373,6 +466,9 @@ class Float(Node):
     def get_str(self):
         print(str(self.value))
 
+    def get_repr(self):
+        return str(self.value)
+
 
 class Int(Node):
     def __init__(self, value):
@@ -383,6 +479,9 @@ class Int(Node):
 
     def get_str(self):
         print(str(self.value))
+
+    def get_repr(self):
+        return str(self.value)
 
 
 class Not(Node):

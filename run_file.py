@@ -1,19 +1,21 @@
-from parser import Compile
+from parser import Compile, print_all_namespaces
 from pprint import *
+import traceback
 
 fn = 'test.qq'
 with open(fn, 'r') as f:
     code = f.read()
 
 try:
-    program = Compile(code, details=False)
+    program = Compile(code, details=True)
     space = program.namespace
     output = program.output
-    print(f'{space.name} : ', end='')
-    pprint(space.space)
+    print(f'GLOBAL NAMESPACE after Program : ')
+    print_all_namespaces()
     if output != '':
-        print(f'{output}')
+        print(f'\nProgram Output : {output}')
 except Exception as e:
     print('	---Error---')
     print(f'- Cant interpret "{code}"')
-    print(e)
+    print('\n', e, '\n')
+    print(traceback.format_exc())

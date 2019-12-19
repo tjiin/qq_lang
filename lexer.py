@@ -39,18 +39,18 @@ lg.add('{', r'\{')
 lg.add('}', r'\}')
 lg.add('++', r'\+\+')
 lg.add('--', r'--')
-lg.add('NEG', r'^-|(?<=\()-|(?<=[\+\-\*\/\^])-|(?<==\s)-|(?<=[^0-9./)])-(?=[0-9.a-zA-Z])')
-lg.add('PLUS', r'\+')
-lg.add('MINUS', r'-')
+lg.add('+', r'\+')
+lg.add('-', r'-')
 lg.add('POW', r'\^|\*{2}')
 lg.add('MUL', r'\*')
 lg.add('DIV', r'/')
 lg.add('=', r'=')
+lg.add('!', r'!')
 lg.add('ARROW_ID', r'[a-zA-Z_][a-zA-Z0-9_]*(?=\([a-zA-Z\s]*((?<=[a-zA-Z\s]),[\s]*[a-zA-Z]+[\s]*)*\)[\s]*=>)')
 lg.add('ID', r'[a-zA-Z_][a-zA-Z0-9_]*')
 
-# ignore /* comments */
-lg.ignore(r'\/\*([^*/\\]+(?=[\s\w\n\r]*))\*\/')
+# ignore // and /* comments */
+lg.ignore(r'\/\/.*|\/\*[\s\S]*\*\/')
 
 # ignore whitespace
 lg.ignore('[ \nt\r\f\v]+')  # lg.ignore(r'[^\S\t]+')

@@ -2,17 +2,9 @@ from unittest import TestCase
 from parser import Compile
 
 two_arg_arithmetic = [
-    ('add 2 pos', '1 + 1'), ('sub 2 pos', '8 - 4'), ('mul 2 pos', '4 * 8',), ('div 2 pos', '12 / 3'),
-    ('add 2 neg', '-10 - 9'), ('sub 2 neg', '-1 - 41'), ('mul 2 neg', '-4 * -2',), ('div 2 neg', '-50 / -2'),
-    ('pow 2 pos', '2**3'), ('pow 2 neg', '-2**-3')
-]
-
-compound_negatives = [
-    ('double neg', '--2', 2), ('trip neg', '---2', -2), ('quad neg', '----2', 2),
-    ('nested trip neg', '-(--(2))', -2), ('sub nested neg', '2--(-2)', 0),
-    ('new line single neg var', 'let x = -1 ; -x*2', [None, 2]),
-    ('new line double neg var', 'let x = -1 ; (--x)*2', [None, -2]),
-    ('new line double neg var', 'let x = -1 ; --x*2', [None, 2])
+    ('add 2 pos', '1 + 1'), ('sub 2 pos', '8 - 4'), ('sub 2 no space', '-8-4'), ('mul 2 pos', '4 * 8',),
+    ('div 2 pos', '12 / 3'), ('add 2 neg', '-10 - 9'), ('sub 2 neg', '-1 - 41'), ('mul 2 neg', '-4 * -2',),
+    ('div 2 neg', '-50 / -2'), ('pow 2 pos', '2**3'), ('pow 2 neg', '-2**-3'),
 ]
 
 harder_arithmetic = [
@@ -22,6 +14,13 @@ harder_arithmetic = [
     ('add/sub/mul/div OOP', '1 + 2 - 3 * 2 / 3 - 11'),
     ('add/sub/mul/div/pow OOP (1)', '3 - 3**2 * 2 + 10 + 2**3**-1'),
     ('add/sub/mul/div/pow OOP (2)', '(1+(2-3**3))*(3-2)'),
+]
+
+negative_expressions = [
+    ('sub no space', 'let x = 2; x-1', 1),
+    ('neg var', 'let x = 2; -x', -2),
+    ('neg expr', 'let x = 2; -(x+1);', -3),
+    ('neg expr nested', 'let x = 2; -(-(x+1));', 3),
 ]
 
 implicit_multiply = [
@@ -41,7 +40,6 @@ simple_and_or_not = [
     ('NOT no eval (2)', 'not False', True),
     ('nested NOT no eval (1)', 'not(not(False))', False),
     ('nested NOT no eval (2)', 'not(not(True))', True),
-    ('not True', 'not True', False),
     ('2 arg OR no eval (1)', 'False or False', False),
     ('2 arg OR no eval (2)', 'True or False', True),
     ('2 arg OR no eval (3)', 'False or True', True),
@@ -92,35 +90,38 @@ new_line_var = [
     ('2 line neg assign eval', r'let x = -10 ; -x * -10', 'x', -100),
 ]
 
+increment_decrement = [
+    ('increment (x ++)', r'let x = -2; x++;', 'x', -1),
+    ('increment (++ x)', r'let x = -2; ++x;', 'x', -1),
+    ('decrement (x --)', r'let x = 2; x--;', 'x', 1),
+    ('decrement (-- x)', r'let x = 2; --x;', 'x', 1),
+]
+
+
 multi_line_vars = [
     ('3 line 3 var assign/eval', r'let x = 10 ; let y = -1.5 ; let z = x * y + 3', 'z', -12.0)
 ]
 
 basic_functions = [
-    ('func no arg no body return', r'def f(){ return(1+1) } ; f()', [None, 2]),
-    ('1 line func no arg no body return', r'def f(){ return(1+1) } ; f()', [None, 2]),
-    ('func arg no body return', 'def f(x){ return(x*10) } ; f(2)', [None, 20]),
-    ('func no arg return', r'def f(){ let x = 10.5 ; return(x*2) } ; f()', [None, 21]),
-    ('func no body return', r'def f(a,b){ return((b/-3)+a*2) } ; f(10,6)', [None, 18]),
-    ('1 line func arg body return', r'def f(a,b){ return((b/-3)+a*2) } ; f(10,6)', [None, 18]),
-    ('1 line func no-body return', r'def f(a,b){ return((b/-3)+a*2) } ; f(10,6)', [None, 18])
+    ('func no arg no body return', r'def f(){ return(1+1) } f()', 2),
+    ('func arg no body return', 'def f(x){ return(x*10) } f(2)', 20),
+    ('func no arg return', r'def f(){ let x = 10.5 ; return(x*2) } f()', 21),
+    ('func no body return', r'def f(a,b){ return((b/-3)+a*2) } f(10,6)', 18),
 ]
 
 function_expressions = [
-    ('2 func nested expr', "def f(a){ return(a+1) } ; def g(a){ return(a*10) } ; 1.5 + f(g(1)-6)",
-     [None, None, 6.5]),
-    ('2 func bool comp expr (1)', "def f(a){return(a+1)} ; def g(a){return(a*10)} ; f(4)+1 == 7 or g(1) < 9",
-     [None, None, False]),
-    ('2 func bool comp expr (2)', "def f(a){return(a+1)} ; def g(a){return(a*10)} ; f(4)+1 == 7 or g(1)>9",
-     [None, None, True]),
-    ('2 func nested arg expr', r'def f(a,b){ let c = (a+1)/(b - 1) ; return(c) } ; def g(x){return(x+1)} ; '
-                               r' f( g(1), 7 ) + 2', [None, None, 2.5]),
+    ('2 func nested expr', "def f(a){ return(a+1) } def g(a){ return(a*10) } 1.5 + f(g(1)-6)", 6.5),
+    ('2 func bool comp expr (1)', "def f(a){return(a+1)} def g(a){return(a*10)} f(4)+1 == 7 or g(1) < 9", False),
+    ('2 func bool comp expr (2)', "def f(a){return(a+1)} def g(a){return(a*10)} f(4)+1 == 7 or g(1)>9", True),
+    ('2 func nested arg expr', r'def f(a,b){ let c = (a+1)/(b - 1) ; return(c) } def g(x){return(x+1)} '
+                               r' f( g(1), 7 ) + 2', 2.5),
 ]
 
 first_class_functions = [
-    ('func passed as arg', 'f(g,x)=>{return(g(x))}; g(y)=>y*-10; f(g,2);',
-     -20),
-    ('func returned', 'f()=>{ g(x)=>x*-3; return(g); } ; h = f(); h(2);', -6),
+    ('func passed as arg', 'f(g,x)=>{return(g(x))} g(y)=>y*-10; f(g,2);', -20),
+    ('func returned', 'f()=>{ g(x)=>x*-3; return(g); } let h = f(); h(2);', -6),
+    ('impl func return closure', 'f(x) => g(y) => x + y; let h = f(2); h(10);', 12),
+    ('assign to func_def', 'let f = g(x) => x*2; f(-1);', -2),
 ]
 
 basic_if_statements = [
@@ -147,25 +148,25 @@ class TestInterpreter(TestCase):
                 print('=' * 30 + '\n' + f'{p1} = {program.output}' + '\n' + '=' * 30)
                 self.assertEqual(eval(p1), program.output)
 
-    def test_compound_negatives(self):
-        for m, p1, ans in compound_negatives:
-            with self.subTest(msg=m, case=p1, expected=ans):
-                program = Compile(p1)
-                print('=' * 30 + '\n' + f'{p1} = {program.output}' + '\n' + '=' * 30)
-                self.assertEqual(ans, program.output)
-
     def test_harder_arithmetic(self):
         for m, p1 in harder_arithmetic:
             with self.subTest(msg=m, case=p1, expected=eval(p1)):
                 program = Compile(p1)
-                print('=' * 30 + '\n' + f'{p1} = {program.output}' + '\n' + '='*30)
+                print('=' * 30 + '\n' + f'{p1} = {program.output}' + '\n' + '=' * 30)
                 self.assertEqual(eval(p1), program.output)
+
+    def test_negative_expressions(self):
+        for m, p1, ans in negative_expressions:
+            with self.subTest(msg=m, case=p1, expected=ans):
+                program = Compile(p1)
+                print('=' * 30 + '\n' + f'{p1} = {program.output}' + '\n' + '=' * 30)
+                self.assertEqual(ans, program.output[-1])
 
     def test_implicit_multiplication(self):
         for m, p1, ans in implicit_multiply:
             with self.subTest(msg=m, case=p1, expected=ans):
                 program = Compile(p1)
-                print('=' * 30 + '\n' + f'{p1} = {program.output}' + '\n' + '='*30)
+                print('=' * 30 + '\n' + f'{p1} = {program.output}' + '\n' + '=' * 30)
                 self.assertEqual(ans, program.output)
 
     def test_boolean_simple_and_or_not(self):
@@ -210,6 +211,13 @@ class TestInterpreter(TestCase):
                 print('=' * 30 + '\n' + f'{p1} --> {program.output[1]}' + '\n' + '=' * 30)
                 self.assertEqual(ans, program.output[1])
 
+    def test_increment_decrement(self):
+        for m, p1, var, ans in increment_decrement:
+            with self.subTest(msg=m, case=p1, expected=ans):
+                program = Compile(p1)
+                print('=' * 30 + '\n' + f'{p1} --> {program.output}' + '\n' + '=' * 30)
+                self.assertEqual(ans, program.namespace[var])
+
     def test_multi_line_vars(self):
         for m, p1, var, ans in multi_line_vars:
             with self.subTest(msg=m, case=p1, expected=ans):
@@ -222,14 +230,14 @@ class TestInterpreter(TestCase):
             with self.subTest(msg=m, case=p1, expected=ans):
                 program = Compile(p1)
                 print('=' * 30 + '\n' + f'{p1} --> {program.output}' + '\n' + '=' * 30)
-                self.assertEqual(ans, program.output)
+                self.assertEqual(ans, program.output[-1])
 
     def test_function_expressions(self):
         for m, p1, ans in function_expressions:
             with self.subTest(msg=m, case=p1, expected=ans):
                 program = Compile(p1)
                 print('=' * 30 + '\n' + f'{p1} --> {program.output}' + '\n' + '=' * 30)
-                self.assertEqual(ans, program.output)
+                self.assertEqual(ans, program.output[-1])
 
     def test_first_class_functions(self):
         for m, p1, ans in first_class_functions:

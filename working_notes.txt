@@ -339,3 +339,167 @@ https://docs.python.org/3/reference/expressions.html#operator-precedence
 
 - can we make it so returns are just block element statements that
 
+----------
+
+- TODO: fix x-1 NEG...
+- TODO: rewrite switch statements to not use break and maybe allow fall through
+- TODO: look more at local variable assignment and namespaces
+- TODO: fix stmt; ...
+- TODO: fix recursive function call names/namespace
+- TODO: add string repr to every object and debug functions using them
+- TODO: add const?
+- TODO: look at pycharm profile callstack and code coverage
+- TODO: (?) look at going down to C api/interface or some other lowel level
+
+- TODO: use bool_expr in if/else statements and conditionals
+
+	(python)
+	x = 5
+	def f():
+		print('Start of f, x = ', x)
+		x = 9
+		print('End of f, x = ', x)
+
+	- UnboundLocalError
+		- interpreter knows x is local variable because it is assigned without a global keyword, created memory space for x
+
+
+switch x <=> y {
+	case '>':
+		...
+	case '<':
+		...
+	case '=='
+}
+	- not great.. additional parsing complexity
+	- but spaceship conditional assignm is kinda error prone / hard to read
+
+
+- best way to add const type?
+
+----------
+
+def nest(x) {
+    x ++;
+    f() => x + 1;;
+    return f;
+};
+let g = nest(10);
+
+	- this is the only way this parses right now.. lol
+
+
+----------
+
+- namespace problem (Dec 15 2019)
+
+	def f(x) {
+	    return(x + 1);
+	};
+
+	f(1);
+	x + 2;
+
+	- final line returns 3..
+	- we're not creating new function namespaces now after doing all that
+	  recursion space handling
+
+
+	- think I fixed it now
+		- variables used but not declared in a function are passed in from parent
+		- variables used AND declared in a function are left alone (not passed in)
+
+		- not sure what recursive spaces are like now..
+
+- Issue: we can assign variables without using let
+	- fixed, added optional bool param reassign to Assignment, default is False
+
+- Issue: namespaces aren't nested right now
+
+----------
+
+- fixed the statement semicolon issue (mostly) !
+
+- Issue:
+	@pg.production('stmt : IF expr : expr ELSE expr')
+
+	if 1==1 :
+		4
+	else
+	    5
+	let x = 2;
+
+	- not trivial to resolve
+
+------
+
+	- good case of different callstack / namespace issues:
+
+		def f(x,i) {
+		    if( i != 0 )
+		    {
+		        i--;
+		        x++;
+		        f(x,i);
+		    }
+		    return(x);
+		}
+
+		f(0,10);
+
+
+----------
+
+	f(x) => g(y) => x + y;
+	let h = f(2);
+	h(10);
+
+	- we need to return a FunctionDef object in its eval method in order for
+	  this to work
+		- but doing this breaks a bunch of unittests where we expected None as the line output
+
+
+	- another case is assigning a variable to a function definition
+		- let f = g(x) => x+1:
+		- doesn't work atm
+
+
+- TODO: Functions that call themselves
+	- have to add func_def to parser
+
+	- function_call : ( func_def )(param_list)
+					| (func_def)( )
+
+	- interesting to handle
+
+
+----------
+
+- added functions that return function definitions
+- added assigning a variable to a function definition
+- fixed comment regex and added // form
+	- nested comments work now too
+- added functions that call themselves
+- fixed switch statement ; and stmt/expr issue
+- fixed x-1 issue, removed neg regex, removed double negatives in place of --x
+	- '--x vs --2' is such a surprisingly tricky and confusing case for what it is..
+
+----------
+
+- tokens have 'getsourcepos', 'getstr', 'gettokentype', 'name', 'source_pos', 'value'
+	- if we can get the position of the first and last tokens, can we get the code of an entire e.g. FunctionDef?
+		- but what about length?
+
+	- SourcePosition(idx=0, lineno=1, colno=1)
+		- lineno and colno start at 1
+
+------------
+
+	( func(x) => x + 1; )(0)
+	f(1);
+
+	- NameSpace Error: function 'f' is undefined in 'None'
+
+	- also i think the ids in function namespaces are the id of the namespace object not the function.. guess that is what we want?
+
+------------
