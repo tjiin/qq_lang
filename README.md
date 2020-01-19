@@ -1,5 +1,5 @@
 ## QQLang (because _tears_)
-A simple personal project creating a programming language in python. The goal was to explore language theory, parsing and syntax, something I've always been interested in,
+A simple personal project writing a programming language in python. The goal was to explore language theory, parsing and syntax, something I've always been interested in,
 
 ### So...What is it good for?
 "Absolutely nothing!"
@@ -27,26 +27,26 @@ That said, I learned a ton about the process of writing a programming language a
 // Passing a function as an argument
 f(g,x) => { return g(x) } 
 g(y) => y*-10; 
-f(g,2);
+f(g,2);         // -20
 
 
 // Returning a function
 f() => { g(x) => x*-3; return(g); } 
 let h = f(); 
-h(2);
+h(2);           // -6
 
 // Definining a function with closures
 f(x) => g(y) => x + y; 
 let h = f(2); 
-h(10);
+h(10);          // 12
 
 // Assigning to a function definition
 let f = g(x) => x*2; 
-f(-1);
+f(-1);         // -2
 
 // factorial defined as an implicit conditional expression (note the lack of a return statement)
 factorial(x) => {
-        x ? x*factorial(x-1) : 1; 
+        x ? x*factorial(x-1) : 1;
 }
 factorial(10);
 
