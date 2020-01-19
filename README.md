@@ -18,16 +18,36 @@ That said, I learned a ton about the process of writing a programming language a
 
 ### Syntax Examples
 
-```
-// factorial defined as an implicit conditional expression (note the lack of a return statement)
 
+```javascript
+
+// Passing a function as an argument
+f(g,x) => { return g(x) } 
+g(y) => y*-10; 
+f(g,2);
+
+
+// Returning a function
+f() => { g(x) => x*-3; return(g); } 
+let h = f(); 
+h(2);
+
+// Definining a function with closures
+f(x) => g(y) => x + y; 
+let h = f(2); 
+h(10);
+
+// Assigning to a function definition
+let f = g(x) => x*2; 
+f(-1);
+
+// factorial defined as an implicit conditional expression (note the lack of a return statement)
 factorial(x) => {
         x ? x*factorial(x-1) : 1; 
 }
 factorial(10);
 
 // Or how about factorial as a switch statement?
-
 factorial(x) => {
     switch (x) {
         case 0:
@@ -40,7 +60,6 @@ factorial(10);
 
 // And just for the fun (and horror) of it, I added goto statements..
 // So here's factorial written with goto.
-
 f(x) => {
     let p = x;
     @dec: x = x-1;
