@@ -8,13 +8,16 @@ There are no strings, lists, objects or other datatypes currently.
 
 
 ### I estimate it's about 100-200 times slower than C...
-
 That said, I learned a ton about the process of writing a programming language and indeed to purse the idea further, perhaps with a more efficient base language.
 
 
 ### Features
 * variable types: let, const, int, float
 * first-class functions
+* switch statements
+* conditional expressions
+* self-calling functions
+* goto (lol)
 
 ### Syntax Examples
 
