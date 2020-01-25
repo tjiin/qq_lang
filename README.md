@@ -1,25 +1,27 @@
 ## QQLang (because _tears_)
-A personal project trying to create my first programming language in python. The main goal was to explore language theory/design and get a better understanding of parsing and abstract syntax trees.
+A personal project writing my own programming language in Python. The main motivation was just wanting to know more about how programming languages work and how they are created.
 
-### So...What is it good for?
-"Absolutely nothing!"
-In all seriousness, it's only useful as a toy or educational example. It's fun trying to define your own syntax constructs.
-There are no strings, lists, objects or other datatypes currently.
+### "So...What is it good for?"
+"Absolutely nothing!" haha
 
+It's only useful as a toy or learning example. I've had some great fun coming up with different syntax and grammar ideas and spent a lot of time looking different languages for things I thought were interesting or novel.
+There's a pretty heavy javascript influence, most notably the ES6 arrow notation.
+The language is still **very** barebones. There are no strings, lists, objects or datatypes other than numbers and booleans.
 
 ### I estimate it's about 100-200 times slower than C...
-That said, I learned a ton about the process of writing a programming language and indeed to purse the idea further, perhaps with a more efficient base language.
+That said, I learned a ton in the process and had a lot of fun. 
 
 
-### Features
-* variable types: let, const, int, float
+### Misc Features
+* optional static typing: let, const, int, float, bool
 * first-class functions
 * switch statements
-* conditional expressions
+* ternary operator
+* "spacehsip" operator
 * self-calling functions
-* goto (lol)
+* goto! :D
 
-### Syntax Examples
+### Some Syntax Examples
 
 
 ```javascript
