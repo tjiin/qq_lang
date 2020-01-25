@@ -1,5 +1,5 @@
 ## QQLang (because _tears_)
-A simple personal project writing a programming language in python. The goal was to explore language theory, parsing and syntax, something I've always been interested in,
+A personal project trying to create my first programming language in python. The main goal was to explore language theory/design and get a better understanding of parsing and abstract syntax trees.
 
 ### So...What is it good for?
 "Absolutely nothing!"
